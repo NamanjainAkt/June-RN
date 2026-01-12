@@ -1,24 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Text, useTheme, Searchbar, Chip, Surface, IconButton } from 'react-native-paper';
-import { AgentCard } from '../../components';
+import { Text } from 'react-native-paper';
+import { AgentCard, Badge, Input } from '../../components';
 import { useChatStore } from '../../store/useChatStore';
+import { useAppTheme } from '../../hooks';
 import { Agent, AgentCategory } from '../../types';
 import { CATEGORIES } from '../../constants/agents';
-import { useDynamicFontSize } from '../../hooks';
+import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 
 export function ExploreScreen() {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
   const { agents } = useChatStore();
+  const { isDarkMode } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<AgentCategory | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const headerFontSize = useDynamicFontSize(24);
-  const searchFontSize = useDynamicFontSize(16);
-  const chipFontSize = useDynamicFontSize(12);
+  const colors = isDarkMode ? COLORS.dark : COLORS.light;
 
   const filteredAgents = useMemo(() => {
     return agents.filter((agent) => {
@@ -43,93 +42,105 @@ export function ExploreScreen() {
     setSearchQuery('');
   };
 
-  const renderCategoryChip = ({ item }: { item: { label: string; value: AgentCategory | 'all' } }) => (
-    <Chip
-      selected={selectedCategory === item.value}
-      onPress={() => setSelectedCategory(item.value)}
-      style={[styles.categoryChip, { backgroundColor: selectedCategory === item.value ? theme.colors.primaryContainer : theme.colors.surfaceVariant }]}
-      mode="flat"
-      textStyle={{ 
-        color: selectedCategory === item.value ? theme.colors.primary : theme.colors.onSurfaceVariant,
-        fontSize: chipFontSize 
-      }}
-    >
-      {item.label}
-    </Chip>
-  );
-
-  const renderAgent = ({ item }: { item: Agent }) => (
-    <View style={styles.agentItem}>
-      <AgentCard agent={item} onPress={handleAgentPress} />
-    </View>
-  );
-
   const getCategoryCount = (category: AgentCategory | 'all') => {
     if (category === 'all') return agents.length;
     return agents.filter((a) => a.category === category).length;
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.header} elevation={0}>
-        <Text style={{ color: theme.colors.onSurface, fontSize: headerFontSize }} variant="headlineMedium">
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.primary }]}>
           Explore Agents
         </Text>
 
+        {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Searchbar
+          <Input
             placeholder="Search agents..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={[styles.searchbar, { backgroundColor: theme.colors.surfaceVariant }]}
-            inputStyle={{ color: theme.colors.onSurface, fontSize: searchFontSize }}
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            icon={searchQuery ? 'close' : 'magnify'}
-            onIconPress={searchQuery ? clearSearch : undefined}
+            style={styles.searchInput}
+            fullWidth
           />
+          {searchQuery ? (
+            <View style={[styles.clearButton, { backgroundColor: colors.secondaryVariant }]}>
+              <Text style={{ color: colors.onSecondary, fontSize: 16 }} onPress={clearSearch}>
+                ✕
+              </Text>
+            </View>
+          ) : (
+            <View style={[styles.searchIcon, { backgroundColor: colors.secondaryVariant }]}>
+              <Text style={{ color: colors.onSecondary, fontSize: 16 }}>🔍</Text>
+            </View>
+          )}
         </View>
 
+        {/* Category Filters */}
         <View style={styles.categoriesContainer}>
           <FlatList
             horizontal
             data={[{ label: `All (${getCategoryCount('all')})`, value: 'all' }, ...CATEGORIES.map(c => ({ label: `${c.label} (${getCategoryCount(c.value)})`, value: c.value }))]}
-            renderItem={renderCategoryChip}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.chipWrapper}
+                onPress={() => setSelectedCategory(item.value as AgentCategory | 'all')}
+                activeOpacity={0.8}
+              >
+                <Badge
+                  variant={selectedCategory === item.value ? 'solid' : 'outlined'}
+                  color={selectedCategory === item.value ? 'accent' : 'secondary'}
+                  size="md"
+                  style={styles.categoryChip}
+                >
+                  {item.label}
+                </Badge>
+              </TouchableOpacity>
+            )}
             keyExtractor={(item) => item.value}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesList}
-            ListFooterComponent={<View style={styles.chipSpacer} />}
           />
         </View>
-      </Surface>
+      </View>
 
+      {/* Results Count */}
       <View style={styles.resultsContainer}>
-        <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodySmall">
+        <Text style={[styles.resultsText, { color: colors.secondaryVariant }]}>
           {filteredAgents.length} agent{filteredAgents.length !== 1 ? 's' : ''} found
         </Text>
       </View>
 
+      {/* Agent Grid */}
       <FlatList
         data={filteredAgents}
-        renderItem={renderAgent}
+        renderItem={({ item }) => (
+          <View style={styles.agentItem}>
+            <AgentCard agent={item} onPress={handleAgentPress} />
+          </View>
+        )}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.agentsGrid}
         contentContainerStyle={styles.agentsList}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+          />
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <IconButton
-              icon="search-off"
-              size={64}
-              iconColor={theme.colors.onSurfaceVariant}
-            />
-            <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: searchFontSize }} variant="bodyLarge">
+            <Text style={[styles.emptyIcon, { color: colors.secondaryVariant }]}>
+              🔍
+            </Text>
+            <Text style={[styles.emptyTitle, { color: colors.primary }]}>
               No agents found
             </Text>
-            <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: searchFontSize * 0.875 }} variant="bodyMedium">
+            <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
               Try adjusting your search or filters
             </Text>
           </View>
@@ -144,50 +155,94 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
     paddingTop: 48,
-    paddingBottom: 8,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
+  title: {
+    fontSize: TYPOGRAPHY.sizes['2xl'],
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    marginBottom: SPACING.lg,
   },
   searchContainer: {
-    marginVertical: 12,
+    position: 'relative',
+    marginBottom: SPACING.md,
   },
-  searchbar: {
-    elevation: 0,
+  searchInput: {
+    paddingRight: 50,
+  },
+  clearButton: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 24,
+    height: 24,
     borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchIcon: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoriesContainer: {
-    marginBottom: 8,
+    marginBottom: SPACING.md,
   },
   categoriesList: {
-    gap: 8,
+    gap: SPACING.sm,
+  },
+  chipWrapper: {
+    marginRight: SPACING.sm,
   },
   categoryChip: {
-    marginRight: 8,
-  },
-  chipSpacer: {
-    width: 8,
+    cursor: 'pointer',
   },
   resultsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  resultsText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
   },
   agentsGrid: {
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: SPACING.lg,
   },
   agentsList: {
-    paddingBottom: 16,
+    paddingBottom: SPACING.xl,
     flexGrow: 1,
   },
   agentItem: {
     flex: 1,
-    margin: 4,
+    margin: SPACING.xs,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: SPACING['3xl'],
     marginTop: 100,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: SPACING.md,
+  },
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.sizes.xl,
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    textAlign: 'center',
   },
 });
