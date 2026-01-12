@@ -68,6 +68,7 @@ export const useChatStore = create<ChatState>()(
       },
 
       saveSessions: async (userId) => {
+        if (!db) return;
         const sessions = get().sessions;
         for (const session of sessions) {
           const sessionRef = doc(db, 'users', userId, 'sessions', session.id);
@@ -78,6 +79,10 @@ export const useChatStore = create<ChatState>()(
       loadSessions: async (userId) => {
         set({ isLoading: true });
         try {
+          if (!db) {
+            set({ sessions: [], isLoading: false });
+            return;
+          }
           const q = query(collection(db, 'users', userId, 'sessions'));
           const snapshot = await getDocs(q);
           const sessions: ChatSession[] = snapshot.docs.map((doc) => ({
@@ -86,12 +91,14 @@ export const useChatStore = create<ChatState>()(
           set({ sessions: sessions.sort((a, b) => b.updatedAt - a.updatedAt) });
         } catch (error) {
           console.error('Error loading sessions:', error);
+          set({ sessions: [] });
         } finally {
           set({ isLoading: false });
         }
       },
 
       deleteSession: async (sessionId, userId) => {
+        if (!db) return;
         try {
           await deleteDoc(doc(db, 'users', userId, 'sessions', sessionId));
           set({

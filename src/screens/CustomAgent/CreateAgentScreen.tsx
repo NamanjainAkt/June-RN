@@ -112,7 +112,9 @@ export function CreateAgentScreen() {
 
       addCustomAgent(newAgent);
 
-      await setDoc(doc(db, 'users', user.id, 'customAgents', newAgent.id), newAgent);
+      if (db) {
+        await setDoc(doc(db, 'users', user.id, 'customAgents', newAgent.id), newAgent);
+      }
 
       Alert.alert('Success', 'Your custom agent has been created!', [
         {
