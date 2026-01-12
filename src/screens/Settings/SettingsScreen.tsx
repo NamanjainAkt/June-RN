@@ -34,16 +34,10 @@ export function SettingsScreen() {
           style: 'destructive',
           onPress: () => {
             logout();
-            navigation.dispatch(
-              (state: any) => {
-                const routes = [{ name: 'Login' }];
-                return {
-                  ...state,
-                  routes,
-                  index: 0,
-                };
-              }
-            );
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' }],
+            });
           },
         },
       ]
@@ -58,18 +52,6 @@ export function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.header} elevation={0}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => navigation.goBack()}
-          iconColor={theme.colors.onSurface}
-        />
-        <Text style={{ color: theme.colors.onSurface }} variant="headlineMedium">
-          Settings
-        </Text>
-      </Surface>
-
       <View style={styles.content}>
         <Surface style={[styles.profileCard, { backgroundColor: theme.colors.surfaceVariant }]}>
           <View style={styles.profileInfo}>
