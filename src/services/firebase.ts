@@ -1,6 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
-import Constants from 'expo-constants';
 
 let app: FirebaseApp;
 let db: Firestore;
@@ -27,21 +26,10 @@ export const initializeFirebase = (): void => {
         appId: process.env.FIREBASE_APP_ID,
       };
       app = initializeApp(config);
-    } else {
-      app = initializeApp({});
+      db = getFirestore(app);
     }
-
-    db = getFirestore(app);
-
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.log('Multiple tabs open, persistence only enabled in one');
-      } else if (err.code === 'unimplemented') {
-        console.log('Persistence not supported by this browser');
-      }
-    });
-  } catch (error) {
-    console.error('Firebase initialization error:', error);
+  } catch {
+    // Firebase is optional - silently skip if no config
   }
 };
 
