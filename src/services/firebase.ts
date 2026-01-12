@@ -34,7 +34,11 @@ export const initializeFirebase = (): void => {
     db = getFirestore(app);
 
     enableIndexedDbPersistence(db).catch((err) => {
-      console.log('Firebase persistence warning:', err.code);
+      if (err.code === 'failed-precondition') {
+        console.log('Multiple tabs open, persistence only enabled in one');
+      } else if (err.code === 'unimplemented') {
+        console.log('Persistence not supported by this browser');
+      }
     });
   } catch (error) {
     console.error('Firebase initialization error:', error);

@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Button, Text, useTheme } from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
+import { Button, Text, useTheme, ActivityIndicator } from 'react-native-paper';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -9,6 +9,14 @@ interface LoginScreenProps {
 
 export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
   const theme = useTheme();
+
+  const handleGoogleLogin = async () => {
+    onLogin();
+  };
+
+  const handleDemoLogin = () => {
+    onLogin();
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -24,15 +32,36 @@ export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
 
         <Button
           mode="contained"
-          onPress={onLogin}
+          onPress={handleGoogleLogin}
           loading={isLoading}
           disabled={isLoading}
           style={styles.button}
           contentStyle={styles.buttonContent}
           icon="google"
         >
-          Continue with Google
+          {isLoading ? 'Signing in...' : 'Continue with Google'}
         </Button>
+
+        <View style={styles.divider}>
+          <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodyMedium">
+            or
+          </Text>
+        </View>
+
+        <Button
+          mode="outlined"
+          onPress={handleDemoLogin}
+          disabled={isLoading}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          icon="account"
+        >
+          Try Demo Mode
+        </Button>
+
+        <Text style={[styles.disclaimer, { color: theme.colors.onSurfaceVariant }]} variant="bodySmall">
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
       </View>
     </View>
   );
@@ -59,7 +88,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   spacer: {
-    height: 48,
+    height: 24,
   },
   button: {
     width: '100%',
@@ -67,5 +96,15 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 24,
+  },
+  disclaimer: {
+    marginTop: 32,
+    textAlign: 'center',
   },
 });

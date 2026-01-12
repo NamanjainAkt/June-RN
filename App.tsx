@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { StatusBar, Platform } from 'react-native';
+import { StatusBar } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
+import { NavigationIndependentTree } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -15,8 +15,6 @@ import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
 import { ChatScreen } from './src/screens/Chat/ChatScreen';
 import { CreateAgentScreen } from './src/screens/CustomAgent/CreateAgentScreen';
 import { useAuthStore } from './src/store/useAuthStore';
-import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
-import * as SecureStore from 'expo-secure-store';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -74,98 +72,84 @@ function MainTabs() {
 }
 
 function RootNavigation() {
-  const { isSignedIn, setSignedIn, setUser, setLoading, logout } = useAuthStore();
-  const { isLoaded } = useAuth();
+  const { isSignedIn, setSignedIn, setUser, setLoading } = useAuthStore();
   const { isDarkMode } = useAppTheme();
-  const [authInitialized, setAuthInitialized] = useState(false);
-
-  useEffect(() => {
-    if (isLoaded && !authInitialized) {
-      const storedState = useAuthStore.getState();
-      if (storedState.isSignedIn && storedState.user) {
-        setUser(storedState.user);
-      } else {
-        setLoading(false);
-      }
-      setAuthInitialized(true);
-    }
-  }, [isLoaded, authInitialized, setUser, setLoading]);
 
   const handleLogin = useCallback(() => {
     setLoading(true);
     setSignedIn(true);
     setUser({
-      id: 'user',
-      email: 'user@example.com',
-      name: 'User',
+      id: 'demo-user',
+      email: 'demo@june.ai',
+      name: 'Demo User',
     });
+    setLoading(false);
   }, [setSignedIn, setUser, setLoading]);
 
-  if (!isLoaded) {
-    return null;
-  }
+  const handleLogout = useCallback(() => {
+    setSignedIn(false);
+    setUser(null);
+  }, [setSignedIn, setUser]);
 
   return (
     <NavigationIndependentTree>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-          }}
-        >
-          {isSignedIn ? (
-            <>
-              <Stack.Screen 
-                name="Main" 
-                component={MainTabs}
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen 
-                name="Chat" 
-                component={ChatScreen}
-                options={{ 
-                  headerShown: true,
-                  headerTitleAlign: 'center',
-                  headerStyle: {
-                    backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                  },
-                  headerTintColor: isDarkMode ? '#ffffff' : '#000000',
-                }}
-              />
-              <Stack.Screen 
-                name="CustomAgent" 
-                component={CreateAgentScreen}
-                options={{ 
-                  headerShown: true,
-                  headerTitleAlign: 'center',
-                  headerTitle: 'Create Custom Agent',
-                  headerStyle: {
-                    backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                  },
-                  headerTintColor: isDarkMode ? '#ffffff' : '#000000',
-                }}
-              />
-            </>
-          ) : (
-            <Stack.Screen
-              name="Login"
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          gestureEnabled: true,
+        }}
+      >
+        {isSignedIn ? (
+          <>
+            <Stack.Screen 
+              name="Main" 
+              component={MainTabs}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Chat" 
+              component={ChatScreen}
               options={{ 
-                headerShown: false,
-                animation: 'fade_from_bottom',
+                headerShown: true,
+                headerTitleAlign: 'center',
+                headerStyle: {
+                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                },
+                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
               }}
-            >
-              {() => (
-                <LoginScreen 
-                  onLogin={handleLogin} 
-                  isLoading={useAuthStore.getState().isLoading} 
-                />
-              )}
-            </Stack.Screen>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+            />
+            <Stack.Screen 
+              name="CustomAgent" 
+              component={CreateAgentScreen}
+              options={{ 
+                headerShown: true,
+                headerTitleAlign: 'center',
+                headerTitle: 'Create Custom Agent',
+                headerStyle: {
+                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                },
+                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
+              }}
+            />
+          </>
+        ) : (
+          <Stack.Screen
+            name="Login"
+            options={{ 
+              headerShown: false,
+              animation: 'fade_from_bottom',
+            }}
+          >
+            {() => (
+              <LoginScreen 
+                onLogin={handleLogin} 
+                isLoading={useAuthStore.getState().isLoading} 
+              />
+            )}
+          </Stack.Screen>
+        )}
+      </Stack.Navigator>
     </NavigationIndependentTree>
   );
 }
@@ -174,40 +158,12 @@ export default function App() {
   const { isDarkMode } = useAppTheme();
 
   return (
-    <ClerkProvider
-      publishableKey={process.env.CLERK_PUBLISHABLE_KEY || ''}
-      tokenCache={{
-        getToken: async () => {
-          try {
-            const token = await SecureStore.getItemAsync('clerkToken');
-            return token || null;
-          } catch {
-            return null;
-          }
-        },
-        saveToken: async (token: string) => {
-          try {
-            await SecureStore.setItemAsync('clerkToken', token);
-          } catch (error) {
-            console.error('Error saving token:', error);
-          }
-        },
-        clearToken: async () => {
-          try {
-            await SecureStore.deleteItemAsync('clerkToken');
-          } catch (error) {
-            console.error('Error clearing token:', error);
-          }
-        },
-      }}
-    >
-      <PaperProvider>
-        <StatusBar 
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
-          backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
-        />
-        <RootNavigation />
-      </PaperProvider>
-    </ClerkProvider>
+    <PaperProvider>
+      <StatusBar 
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+        backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
+      />
+      <RootNavigation />
+    </PaperProvider>
   );
 }
