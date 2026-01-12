@@ -5,6 +5,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import * as Crypto from 'expo-crypto';
+
+if (typeof global.crypto === 'undefined') {
+  global.crypto = Crypto;
+}
+
 import { useAppTheme } from './src/hooks';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
 import { HomeScreen } from './src/screens/Home/HomeScreen';
