@@ -5,6 +5,8 @@ import { NavigationIndependentTree } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import * as SecureStore from 'expo-secure-store';
 
 import { useAppTheme } from './src/hooks';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
@@ -73,9 +75,36 @@ function MainTabs() {
 
 function RootNavigation() {
   const { isSignedIn, setSignedIn, setUser, setLoading } = useAuthStore();
+  const { isLoaded, isSignedIn: clerkSignedIn, userId } = useAuth();
   const { isDarkMode } = useAppTheme();
 
-  const handleLogin = useCallback(() => {
+  useEffect(() => {
+    if (isLoaded) {
+      if (clerkSignedIn && userId) {
+        setSignedIn(true);
+        setUser({
+          id: userId,
+          email: 'user@example.com',
+          name: 'User',
+        });
+        setLoading(false);
+      } else {
+        const storedState = useAuthStore.getState();
+        if (storedState.isSignedIn && storedState.user) {
+          setSignedIn(true);
+          setUser(storedState.user);
+        } else {
+          setLoading(false);
+        }
+      }
+    }
+  }, [isLoaded, clerkSignedIn, userId]);
+
+  const handleGoogleLogin = useCallback(async () => {
+    setLoading(true);
+  }, [setLoading]);
+
+  const handleDemoLogin = useCallback(() => {
     setLoading(true);
     setSignedIn(true);
     setUser({
@@ -86,6 +115,12 @@ function RootNavigation() {
     setLoading(false);
   }, [setSignedIn, setUser, setLoading]);
 
+  const effectiveIsSignedIn = clerkSignedIn || isSignedIn;
+
+  if (!isLoaded) {
+    return null;
+  }
+
   return (
     <NavigationIndependentTree>
       <Stack.Navigator
@@ -95,7 +130,7 @@ function RootNavigation() {
           gestureEnabled: true,
         }}
       >
-        {isSignedIn ? (
+        {effectiveIsSignedIn ? (
           <>
             <Stack.Screen 
               name="Main" 
@@ -138,7 +173,8 @@ function RootNavigation() {
           >
             {() => (
               <LoginScreen 
-                onLogin={handleLogin} 
+                onGoogleLogin={handleGoogleLogin}
+                onDemoLogin={handleDemoLogin}
                 isLoading={useAuthStore.getState().isLoading} 
               />
             )}
@@ -153,12 +189,40 @@ export default function App() {
   const { isDarkMode } = useAppTheme();
 
   return (
-    <PaperProvider>
-      <StatusBar 
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
-        backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
-      />
-      <RootNavigation />
-    </PaperProvider>
+    <ClerkProvider
+      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || ''}
+      tokenCache={{
+        getToken: async () => {
+          try {
+            const token = await SecureStore.getItemAsync('clerkToken');
+            return token || null;
+          } catch {
+            return null;
+          }
+        },
+        saveToken: async (token: string) => {
+          try {
+            await SecureStore.setItemAsync('clerkToken', token);
+          } catch (error) {
+            console.error('Error saving token:', error);
+          }
+        },
+        clearToken: async () => {
+          try {
+            await SecureStore.deleteItemAsync('clerkToken');
+          } catch (error) {
+            console.error('Error clearing token:', error);
+          }
+        },
+      }}
+    >
+      <PaperProvider>
+        <StatusBar 
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+          backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
+        />
+        <RootNavigation />
+      </PaperProvider>
+    </ClerkProvider>
   );
 }

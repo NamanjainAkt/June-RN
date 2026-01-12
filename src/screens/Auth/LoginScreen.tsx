@@ -1,22 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
-import { Button, Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Button, Text, useTheme } from 'react-native-paper';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onGoogleLogin: () => void;
+  onDemoLogin: () => void;
   isLoading: boolean;
 }
 
-export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
+export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScreenProps) {
   const theme = useTheme();
-
-  const handleGoogleLogin = async () => {
-    onLogin();
-  };
-
-  const handleDemoLogin = () => {
-    onLogin();
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -32,7 +25,7 @@ export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
 
         <Button
           mode="contained"
-          onPress={handleGoogleLogin}
+          onPress={onGoogleLogin}
           loading={isLoading}
           disabled={isLoading}
           style={styles.button}
@@ -50,7 +43,7 @@ export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
 
         <Button
           mode="outlined"
-          onPress={handleDemoLogin}
+          onPress={onDemoLogin}
           disabled={isLoading}
           style={styles.button}
           contentStyle={styles.buttonContent}
