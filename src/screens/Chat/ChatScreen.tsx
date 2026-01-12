@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Keyboard, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Keyboard } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Text, useTheme, Surface, IconButton, Avatar, Icon } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { ChatInput, MessageBubble } from '../../components';
+import { ChatInput, MessageBubble, Avatar, Button } from '../../components';
 import { generateResponse } from '../../services/gemini';
+import { useAppTheme } from '../../hooks';
 import { Message } from '../../types';
 import * as ImagePicker from 'expo-image-picker';
-import { useDynamicFontSize } from '../../hooks';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../constants/theme';
 
 type ChatRouteParams = {
   agentId: string;
@@ -18,7 +19,6 @@ type ChatRouteParams = {
 export function ChatScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<{ Chat: ChatRouteParams }, 'Chat'>>();
-  const theme = useTheme();
   const { user } = useAuthStore();
   const {
     agents,
@@ -28,18 +28,18 @@ export function ChatScreen() {
     addMessage,
     sessions,
   } = useChatStore();
+  const { isDarkMode } = useAppTheme();
 
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<Array<{ uri: string; base64: string }>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
+  const colors = isDarkMode ? COLORS.dark : COLORS.light;
   const agentId = route.params?.agentId;
   const sessionId = route.params?.sessionId;
-
   const agent = agents.find((a) => a.id === agentId);
-  const fontSize = useDynamicFontSize(16);
 
   useEffect(() => {
     if (agentId) {
@@ -60,43 +60,40 @@ export function ChatScreen() {
       navigation.setOptions({
         headerTitle: () => (
           <View style={styles.headerTitle}>
-            <Avatar.Text
-              size={36}
-              label={agent.name.charAt(0)}
-              style={{ backgroundColor: theme.colors.primaryContainer }}
-              labelStyle={{ color: theme.colors.primary }}
-            />
+            <Avatar name={agent.name} size="md" />
             <View style={styles.headerText}>
-              <Text style={{ color: theme.colors.onSurface, fontSize: 16 }} numberOfLines={1}>
+              <Text style={[styles.headerName, { color: colors.primary }]}>
                 {agent.name}
               </Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }} numberOfLines={1}>
+              <Text style={[styles.headerModel, { color: colors.secondaryVariant }]}>
                 Gemini 2.5 Flash Lite
               </Text>
             </View>
           </View>
         ),
         headerRight: () => (
-          <IconButton
-            icon="plus"
-            size={24}
+          <Button
+            variant="ghost"
+            size="sm"
             onPress={() => {
               const newAgent = agents.find((a) => a.id === agentId);
               if (newAgent) {
                 createSession(newAgent);
                 setMessage('');
-                setSelectedImage(null);
+                setSelectedImages([]);
               }
             }}
-            iconColor={theme.colors.onSurface}
-          />
+            style={styles.newChatButton}
+          >
+            <Text style={{ color: colors.secondary, fontSize: 16 }}>➕</Text>
+          </Button>
         ),
       });
     }
-  }, [agentId, sessionId, agents, agent]);
+  }, [agentId, sessionId, agents, agent, isDarkMode]);
 
   const handleSend = useCallback(async () => {
-    if (!message.trim() && !selectedImage) return;
+    if (!message.trim() && selectedImages.length === 0) return;
     if (!currentSession || !agent) return;
 
     const userMessage: Message = {
@@ -104,12 +101,12 @@ export function ChatScreen() {
       role: 'user',
       content: message.trim(),
       timestamp: Date.now(),
-      imageUrl: selectedImage || undefined,
+      imageUrl: selectedImages.length > 0 ? selectedImages[0].base64 : undefined,
     };
 
     addMessage(userMessage);
     setMessage('');
-    setSelectedImage(null);
+    setSelectedImages([]);
     Keyboard.dismiss();
 
     setIsLoading(true);
@@ -117,11 +114,11 @@ export function ChatScreen() {
 
     try {
       let response = '';
-      if (selectedImage) {
+      if (selectedImages.length > 0) {
         response = await generateResponse(
           message.trim(),
           agent.systemPrompt,
-          selectedImage
+          selectedImages[0].base64
         );
       } else {
         response = await generateResponse(
@@ -151,29 +148,11 @@ export function ChatScreen() {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [message, selectedImage, currentSession, agent, addMessage]);
+  }, [message, selectedImages, currentSession, agent, addMessage]);
 
-  const handleImagePick = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-      base64: true,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].base64 || null);
-    }
-  };
-
-  const clearSelectedImage = () => {
-    setSelectedImage(null);
-  };
+  const handleImagesSelected = useCallback((images: Array<{ uri: string; base64: string }>) => {
+    setSelectedImages(images);
+  }, []);
 
   const messages = currentSession?.messages || [];
 
@@ -186,19 +165,21 @@ export function ChatScreen() {
   }, [messages.length]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
-          <Surface style={[styles.emptyIcon, { backgroundColor: theme.colors.primaryContainer }]}>
-            <Text style={{ color: theme.colors.primary, fontSize: 48 }}>{agent?.name?.charAt(0) || 'A'}</Text>
-          </Surface>
-          <Text style={{ color: theme.colors.onSurface, fontSize: fontSize * 1.25 }} variant="headlineSmall">
+          <View style={[styles.emptyIcon, { backgroundColor: colors.primaryContainer }]}>
+            <Text style={{ color: colors.primary, fontSize: 48 }}>
+              {agent?.name?.charAt(0) || 'A'}
+            </Text>
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.primary }]}>
             Chat with {agent?.name}
           </Text>
-          <Text style={{ color: theme.colors.onSurfaceVariant, fontSize }} variant="bodyMedium">
+          <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
             {agent?.description}
           </Text>
-          <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: fontSize * 0.875, marginTop: 8 }} variant="bodySmall">
+          <Text style={[styles.emptyModel, { color: colors.secondaryVariant }]}>
             Powered by Gemini 2.5 Flash Lite
           </Text>
         </View>
@@ -216,45 +197,35 @@ export function ChatScreen() {
           ListFooterComponent={
             isTyping ? (
               <View style={styles.typingIndicator}>
-                <Surface style={[styles.typingBubble, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <View style={[styles.typingBubble, { backgroundColor: colors.surfaceVariant }]}>
                   <View style={styles.typingDots}>
-                    <View style={[styles.dot, { backgroundColor: theme.colors.onSurfaceVariant }]} />
-                    <View style={[styles.dot, { backgroundColor: theme.colors.onSurfaceVariant }]} />
-                    <View style={[styles.dot, { backgroundColor: theme.colors.onSurfaceVariant }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
                   </View>
-                </Surface>
+                </View>
               </View>
             ) : null
           }
         />
       )}
 
-      {selectedImage && (
-        <Surface style={[styles.imagePreview, { backgroundColor: theme.colors.surfaceVariant }]}>
-          <Text style={{ color: theme.colors.onSurface, fontSize: 12 }} variant="bodySmall">
-            Image attached
-          </Text>
-          <TouchableOpacity onPress={clearSelectedImage}>
-            <IconButton icon="close" size={20} iconColor={theme.colors.error} />
-          </TouchableOpacity>
-        </Surface>
-      )}
-
       {(isLoading || isTyping) && (
-        <Surface style={styles.loadingIndicator} elevation={0}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, fontSize: 12 }} variant="bodySmall">
+        <View style={styles.loadingIndicator}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={[styles.loadingText, { color: colors.secondaryVariant }]}>
             {isTyping ? 'Thinking...' : 'Loading...'}
           </Text>
-        </Surface>
+        </View>
       )}
 
-      <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
         <ChatInput
           value={message}
           onChangeText={setMessage}
           onSend={handleSend}
-          onImagePick={handleImagePick}
+          onImagesSelected={handleImagesSelected}
+          selectedImages={selectedImages}
           isLoading={isLoading}
         />
       </View>
@@ -271,62 +242,86 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerText: {
-    marginLeft: 12,
+    marginLeft: SPACING.md,
+  },
+  headerName: {
+    fontSize: TYPOGRAPHY.sizes.lg,
+    fontFamily: TYPOGRAPHY.fontFamily.semibold,
+  },
+  headerModel: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+  },
+  newChatButton: {
+    width: 40,
+    height: 40,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: SPACING.xl,
   },
   emptyIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: BORDER_RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
+  },
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.sizes['2xl'],
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    textAlign: 'center',
+    marginBottom: SPACING.md,
+  },
+  emptyModel: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    textAlign: 'center',
   },
   messagesList: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   typingIndicator: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
   },
   typingBubble: {
-    padding: 12,
-    borderRadius: 16,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
     alignSelf: 'flex-start',
   },
   typingDots: {
     flexDirection: 'row',
-    gap: 4,
+    gap: SPACING.xs,
   },
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-  },
-  imagePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.full,
   },
   loadingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    paddingHorizontal: 16,
+    padding: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+  },
+  loadingText: {
+    marginLeft: SPACING.sm,
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
   },
   inputContainer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
+    borderTopColor: 'rgba(0,0,0,0.05)',
   },
 });
