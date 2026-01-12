@@ -19,13 +19,16 @@ import { FONT_SIZE_LABELS } from '../../constants/agents';
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
   const theme = useTheme();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isSignedIn } = useAuthStore();
   const { theme: themeSettings, setTheme } = useThemeStore();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     logout();
-    navigation.replace('Login');
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
   };
 
   const toggleTheme = () => {
@@ -58,6 +61,7 @@ export function SettingsScreen() {
                 size={64}
                 label={user?.name?.charAt(0) || 'G'}
                 style={{ backgroundColor: theme.colors.primaryContainer }}
+                labelStyle={{ color: theme.colors.primary }}
               />
             )}
             <View style={styles.profileText}>
@@ -141,6 +145,10 @@ export function SettingsScreen() {
             Log Out
           </Button>
         </View>
+
+        <Text style={[styles.version, { color: theme.colors.onSurfaceVariant }]} variant="bodySmall">
+          June AI v1.0.0
+        </Text>
       </View>
     </View>
   );
@@ -201,5 +209,9 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     borderColor: 'transparent',
+  },
+  version: {
+    textAlign: 'center',
+    marginTop: 24,
   },
 });

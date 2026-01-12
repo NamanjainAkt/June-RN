@@ -1,5 +1,5 @@
-import React from 'react';
-import { StatusBar } from 'react-native';
+import React, { useEffect, useCallback, useState } from 'react';
+import { StatusBar, Platform } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,13 +14,13 @@ import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
 import { ChatScreen } from './src/screens/Chat/ChatScreen';
 import { CreateAgentScreen } from './src/screens/CustomAgent/CreateAgentScreen';
 import { useAuthStore } from './src/store/useAuthStore';
-import { ClerkProvider } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_ICON = {
+const TAB_ICON: Record<string, any> = {
   Home: 'home',
   Explore: 'compass',
   History: 'history',
@@ -32,27 +32,65 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          const iconName = TAB_ICON[route.name as keyof typeof TAB_ICON];
-          return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
+          const iconName = TAB_ICON[route.name] || 'help-circle';
+          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#6200ee',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
+        tabBarStyle: {
+          borderTopWidth: 0,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Explore" component={ExploreScreen} />
-      <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={{ title: 'Home', headerShown: false }}
+      />
+      <Tab.Screen 
+        name="Explore" 
+        component={ExploreScreen}
+        options={{ title: 'Explore', headerShown: false }}
+      />
+      <Tab.Screen 
+        name="History" 
+        component={HistoryScreen}
+        options={{ title: 'History', headerShown: false }}
+      />
+      <Tab.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ title: 'Settings', headerShown: false }}
+      />
     </Tab.Navigator>
   );
 }
 
-export default function App() {
+function RootNavigation() {
+  const { isSignedIn, setSignedIn, setUser, setLoading, logout } = useAuthStore();
+  const { isLoaded } = useAuth();
   const { isDarkMode } = useAppTheme();
-  const { isSignedIn, setSignedIn, setUser, setLoading } = useAuthStore();
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    if (isLoaded && !authInitialized) {
+      const storedState = useAuthStore.getState();
+      if (storedState.isSignedIn && storedState.user) {
+        setUser(storedState.user);
+      } else {
+        setLoading(false);
+      }
+      setAuthInitialized(true);
+    }
+  }, [isLoaded, authInitialized, setUser, setLoading]);
+
+  const handleLogin = useCallback(() => {
     setLoading(true);
     setSignedIn(true);
     setUser({
@@ -60,7 +98,77 @@ export default function App() {
       email: 'user@example.com',
       name: 'User',
     });
-  };
+  }, [setSignedIn, setUser, setLoading]);
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+          gestureEnabled: true,
+        }}
+      >
+        {isSignedIn ? (
+          <>
+            <Stack.Screen 
+              name="Main" 
+              component={MainTabs}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Chat" 
+              component={ChatScreen}
+              options={{ 
+                headerShown: true,
+                headerTitleAlign: 'center',
+                headerStyle: {
+                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                },
+                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
+              }}
+            />
+            <Stack.Screen 
+              name="CustomAgent" 
+              component={CreateAgentScreen}
+              options={{ 
+                headerShown: true,
+                headerTitleAlign: 'center',
+                headerTitle: 'Create Custom Agent',
+                headerStyle: {
+                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                },
+                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
+              }}
+            />
+          </>
+        ) : (
+          <Stack.Screen
+            name="Login"
+            options={{ 
+              headerShown: false,
+              animation: 'fade_from_bottom',
+            }}
+          >
+            {() => (
+              <LoginScreen 
+                onLogin={handleLogin} 
+                isLoading={useAuthStore.getState().isLoading} 
+              />
+            )}
+          </Stack.Screen>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  const { isDarkMode } = useAppTheme();
 
   return (
     <ClerkProvider
@@ -69,47 +177,33 @@ export default function App() {
         getToken: async () => {
           try {
             const token = await SecureStore.getItemAsync('clerkToken');
-            return token;
+            return token || null;
           } catch {
             return null;
           }
         },
-        saveToken: async (token) => {
+        saveToken: async (token: string) => {
           try {
             await SecureStore.setItemAsync('clerkToken', token);
-          } catch {}
+          } catch (error) {
+            console.error('Error saving token:', error);
+          }
         },
         clearToken: async () => {
           try {
             await SecureStore.deleteItemAsync('clerkToken');
-          } catch {}
+          } catch (error) {
+            console.error('Error clearing token:', error);
+          }
         },
       }}
     >
       <PaperProvider>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-        <NavigationContainer>
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            {isSignedIn ? (
-              <>
-                <Stack.Screen name="Main" component={MainTabs} />
-                <Stack.Screen name="Chat" component={ChatScreen} />
-                <Stack.Screen name="CustomAgent" component={CreateAgentScreen} />
-              </>
-            ) : (
-              <Stack.Screen
-                name="Login"
-                options={{ headerShown: false }}
-              >
-                {(props: any) => <LoginScreen {...props} onLogin={handleLogin} isLoading={false} />}
-              </Stack.Screen>
-            )}
-          </Stack.Navigator>
-        </NavigationContainer>
+        <StatusBar 
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
+          backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
+        />
+        <RootNavigation />
       </PaperProvider>
     </ClerkProvider>
   );
