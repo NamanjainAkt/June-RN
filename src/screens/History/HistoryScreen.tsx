@@ -1,25 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Text, useTheme, Surface, IconButton, ActivityIndicator, Avatar } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
+import { useAppTheme } from '../../hooks';
 import { ChatSession } from '../../types';
-import { format, formatDistanceToNow } from 'date-fns';
-import { useDynamicFontSize } from '../../hooks';
+import { formatDistanceToNow } from 'date-fns';
+import { Card, Avatar, Button } from '../../components';
+import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 
 export function HistoryScreen() {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
   const { user } = useAuthStore();
   const { sessions, loadSessions, deleteSession, isLoading } = useChatStore();
+  const { isDarkMode } = useAppTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const headerFontSize = useDynamicFontSize(24);
-  const titleFontSize = useDynamicFontSize(16);
-  const subtitleFontSize = useDynamicFontSize(12);
-  const bodyFontSize = useDynamicFontSize(14);
+  const colors = isDarkMode ? COLORS.dark : COLORS.light;
 
   useEffect(() => {
     if (user?.id) {
@@ -63,16 +62,6 @@ export function HistoryScreen() {
     );
   }, [user?.id, deleteSession]);
 
-  const getSessionIcon = (agentName: string) => {
-    const name = agentName.toLowerCase();
-    if (name.includes('writing')) return 'pencil';
-    if (name.includes('coding')) return 'code';
-    if (name.includes('image')) return 'image';
-    if (name.includes('caption')) return 'text';
-    if (name.includes('general')) return 'assistant';
-    return 'chat';
-  };
-
   const renderSessionItem = useCallback(({ item }: { item: ChatSession }) => {
     const isDeleting = deletingId === item.id;
     const lastMessage = item.messages[item.messages.length - 1];
@@ -83,85 +72,64 @@ export function HistoryScreen() {
       <TouchableOpacity
         onPress={() => handleSessionPress(item)}
         disabled={isDeleting}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
-        <Surface
-          style={[
-            styles.sessionCard,
-            { backgroundColor: theme.colors.surfaceVariant },
-            isDeleting && { opacity: 0.5 },
-          ]}
-        >
+        <Card variant="outlined" style={styles.sessionCard}>
           <View style={styles.sessionLeft}>
-            <Avatar.Text
-              size={48}
-              label={item.agentName.charAt(0)}
-              style={{ backgroundColor: theme.colors.primaryContainer }}
-              labelStyle={{ color: theme.colors.primary }}
-            />
+            <Avatar name={item.agentName} size="lg" />
           </View>
 
           <View style={styles.sessionInfo}>
             <View style={styles.sessionHeader}>
-              <Text
-                style={{ color: theme.colors.onSurface, fontSize: titleFontSize }}
-                variant="titleMedium"
-                numberOfLines={1}
-              >
+              <Text style={[styles.sessionTitle, { color: colors.primary }]}>
                 {item.agentName}
               </Text>
-              <Text
-                style={{ color: theme.colors.onSurfaceVariant, fontSize: subtitleFontSize }}
-                variant="bodySmall"
-              >
+              <Text style={[styles.sessionTime, { color: colors.secondaryVariant }]}>
                 {timeAgo}
               </Text>
             </View>
 
             <Text
-              style={{ color: theme.colors.onSurfaceVariant, fontSize: bodyFontSize }}
-              variant="bodyMedium"
+              style={[styles.sessionPreview, { color: colors.secondary }]}
               numberOfLines={2}
             >
               {preview}
             </Text>
 
             <View style={styles.sessionMeta}>
-              <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: subtitleFontSize }} variant="bodySmall">
+              <Text style={[styles.messageCount, { color: colors.secondaryVariant }]}>
                 {item.messages.length} message{item.messages.length !== 1 ? 's' : ''}
               </Text>
             </View>
           </View>
 
-          <IconButton
-            icon="trash-can-outline"
-            size={20}
+          <Button
+            variant="ghost"
+            size="sm"
             onPress={() => handleDeleteSession(item.id)}
-            iconColor={theme.colors.error}
             disabled={isDeleting}
-          />
-        </Surface>
+            style={styles.deleteButton}
+          >
+            <Text style={{ color: colors.error, fontSize: 16 }}>🗑️</Text>
+          </Button>
+        </Card>
       </TouchableOpacity>
     );
-  }, [theme, handleSessionPress, handleDeleteSession, deletingId, titleFontSize, subtitleFontSize, bodyFontSize]);
+  }, [colors, handleSessionPress, handleDeleteSession, deletingId]);
 
   const keyExtractor = useCallback((item: ChatSession) => item.id, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.header} elevation={0}>
-        <Text
-          style={{ color: theme.colors.onSurface, fontSize: headerFontSize }}
-          variant="headlineMedium"
-        >
-          History
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.primary }]}>
+          Chat History
         </Text>
-      </Surface>
+      </View>
 
       {isLoading && !refreshing ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 16 }} variant="bodyMedium">
+          <Text style={[styles.loadingText, { color: colors.secondary }]}>
             Loading conversations...
           </Text>
         </View>
@@ -175,26 +143,21 @@ export function HistoryScreen() {
           onRefresh={handleRefresh}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Surface style={[styles.emptyIcon, { backgroundColor: theme.colors.surfaceVariant }]}>
-                <IconButton icon="history" size={48} iconColor={theme.colors.onSurfaceVariant} />
-              </Surface>
-              <Text
-                style={{ color: theme.colors.onSurface, fontSize: bodyFontSize * 1.25 }}
-                variant="headlineSmall"
-              >
+              <Text style={[styles.emptyIcon, { color: colors.secondaryVariant }]}>
+                📚
+              </Text>
+              <Text style={[styles.emptyTitle, { color: colors.primary }]}>
                 No Chat History
               </Text>
-              <Text
-                style={{ color: theme.colors.onSurfaceVariant, fontSize: bodyFontSize, marginTop: 8 }}
-                variant="bodyMedium"
-              >
+              <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
                 Start a conversation to see it here
               </Text>
               <TouchableOpacity
-                style={[styles.exploreButton, { backgroundColor: theme.colors.primary }]}
+                style={[styles.exploreButton, { backgroundColor: colors.primary }]}
                 onPress={() => navigation.navigate('Explore')}
+                activeOpacity={0.8}
               >
-                <Text style={{ color: theme.colors.onPrimary, fontSize: bodyFontSize }} variant="bodyMedium">
+                <Text style={[styles.exploreButtonText, { color: colors.onPrimary }]}>
                   Explore Agents
                 </Text>
               </TouchableOpacity>
@@ -202,7 +165,7 @@ export function HistoryScreen() {
           }
           ListHeaderComponent={
             sessions.length > 0 ? (
-              <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }} variant="bodySmall">
+              <Text style={[styles.resultsText, { color: colors.secondaryVariant }]}>
                 {sessions.length} conversation{sessions.length !== 1 ? 's' : ''}
               </Text>
             ) : null
@@ -218,27 +181,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 16,
     paddingTop: 48,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
+  title: {
+    fontSize: TYPOGRAPHY.sizes['2xl'],
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+  },
   sessionsList: {
-    padding: 16,
-    paddingTop: 8,
+    padding: SPACING.lg,
+    paddingTop: SPACING.md,
+  },
+  resultsText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    marginBottom: SPACING.sm,
   },
   sessionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  deletingCard: {
+    opacity: 0.5,
   },
   sessionLeft: {
-    marginRight: 12,
+    marginRight: SPACING.md,
   },
   sessionInfo: {
     flex: 1,
@@ -247,31 +226,63 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
+  },
+  sessionTitle: {
+    fontSize: TYPOGRAPHY.sizes.lg,
+    fontFamily: TYPOGRAPHY.fontFamily.semibold,
+  },
+  sessionTime: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+  },
+  sessionPreview: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    lineHeight: 20,
+    marginBottom: SPACING.sm,
   },
   sessionMeta: {
     flexDirection: 'row',
-    marginTop: 8,
+  },
+  messageCount: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+  },
+  deleteButton: {
+    width: 40,
+    height: 40,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    padding: SPACING['3xl'],
     marginTop: 100,
   },
   emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+    fontSize: 64,
+    marginBottom: SPACING.md,
+  },
+  emptyTitle: {
+    fontSize: TYPOGRAPHY.sizes.xl,
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    textAlign: 'center',
+    marginBottom: SPACING.xl,
   },
   exploreButton: {
-    marginTop: 24,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.md,
     borderRadius: 24,
+  },
+  exploreButtonText: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
   },
 });
