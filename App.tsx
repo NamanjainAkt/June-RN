@@ -86,11 +86,6 @@ function RootNavigation() {
     setLoading(false);
   }, [setSignedIn, setUser, setLoading]);
 
-  const handleLogout = useCallback(() => {
-    setSignedIn(false);
-    setUser(null);
-  }, [setSignedIn, setUser]);
-
   return (
     <NavigationIndependentTree>
       <Stack.Navigator

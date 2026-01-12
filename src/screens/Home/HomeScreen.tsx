@@ -5,7 +5,6 @@ import { Text, useTheme, Surface, IconButton, FAB, Divider, ActivityIndicator } 
 import { AgentCard } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
-import { useAuth } from '@clerk/clerk-expo';
 import { Agent } from '../../types';
 import { useDynamicFontSize } from '../../hooks';
 
@@ -14,7 +13,6 @@ export function HomeScreen() {
   const theme = useTheme();
   const { user } = useAuthStore();
   const { agents, loadSessions, loadAgents } = useChatStore();
-  const { isLoaded } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const headerFontSize = useDynamicFontSize(28);
@@ -22,10 +20,8 @@ export function HomeScreen() {
   const sectionTitleFontSize = useDynamicFontSize(20);
 
   useEffect(() => {
-    if (isLoaded) {
-      loadAgents();
-    }
-  }, [isLoaded]);
+    loadAgents();
+  }, []);
 
   const handleAgentPress = (agent: Agent) => {
     navigation.navigate('Chat', { agentId: agent.id });
