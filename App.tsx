@@ -1,15 +1,10 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import * as Crypto from 'expo-crypto';
-
-if (typeof global.crypto === 'undefined') {
-  global.crypto = Crypto;
-}
 
 import { useAppTheme } from './src/hooks';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
@@ -111,65 +106,67 @@ function RootNavigation() {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right',
-          gestureEnabled: true,
-        }}
-      >
-        {isSignedIn ? (
-          <>
-            <Stack.Screen 
-              name="Main" 
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="Chat" 
-              component={ChatScreen}
-              options={{ 
-                headerShown: true,
-                headerTitleAlign: 'center',
-                headerStyle: {
-                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                },
-                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
-              }}
-            />
-            <Stack.Screen 
-              name="CustomAgent" 
-              component={CreateAgentScreen}
-              options={{ 
-                headerShown: true,
-                headerTitleAlign: 'center',
-                headerTitle: 'Create Custom Agent',
-                headerStyle: {
-                  backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
-                },
-                headerTintColor: isDarkMode ? '#ffffff' : '#000000',
-              }}
-            />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Login"
-            options={{ 
-              headerShown: false,
-              animation: 'fade_from_bottom',
-            }}
-          >
-            {() => (
-              <LoginScreen 
-                onLogin={handleLogin} 
-                isLoading={useAuthStore.getState().isLoading} 
+    <NavigationIndependentTree>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            gestureEnabled: true,
+          }}
+        >
+          {isSignedIn ? (
+            <>
+              <Stack.Screen 
+                name="Main" 
+                component={MainTabs}
+                options={{ headerShown: false }}
               />
-            )}
-          </Stack.Screen>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+              <Stack.Screen 
+                name="Chat" 
+                component={ChatScreen}
+                options={{ 
+                  headerShown: true,
+                  headerTitleAlign: 'center',
+                  headerStyle: {
+                    backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                  },
+                  headerTintColor: isDarkMode ? '#ffffff' : '#000000',
+                }}
+              />
+              <Stack.Screen 
+                name="CustomAgent" 
+                component={CreateAgentScreen}
+                options={{ 
+                  headerShown: true,
+                  headerTitleAlign: 'center',
+                  headerTitle: 'Create Custom Agent',
+                  headerStyle: {
+                    backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+                  },
+                  headerTintColor: isDarkMode ? '#ffffff' : '#000000',
+                }}
+              />
+            </>
+          ) : (
+            <Stack.Screen
+              name="Login"
+              options={{ 
+                headerShown: false,
+                animation: 'fade_from_bottom',
+              }}
+            >
+              {() => (
+                <LoginScreen 
+                  onLogin={handleLogin} 
+                  isLoading={useAuthStore.getState().isLoading} 
+                />
+              )}
+            </Stack.Screen>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </NavigationIndependentTree>
   );
 }
 
