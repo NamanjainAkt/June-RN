@@ -5,10 +5,12 @@ import { NavigationIndependentTree } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
 
 import { useAppTheme } from './src/hooks';
+import { COLORS, TYPOGRAPHY, BORDER_RADIUS } from './src/constants/theme';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
 import { HomeScreen } from './src/screens/Home/HomeScreen';
 import { ExploreScreen } from './src/screens/Explore/ExploreScreen';
@@ -187,6 +189,27 @@ function RootNavigation() {
 
 export default function App() {
   const { isDarkMode } = useAppTheme();
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  const paperTheme = {
+    colors: isDarkMode ? COLORS.dark : COLORS.light,
+    fonts: {
+      regular: { fontFamily: TYPOGRAPHY.fontFamily.regular },
+      medium: { fontFamily: TYPOGRAPHY.fontFamily.medium },
+      light: { fontFamily: TYPOGRAPHY.fontFamily.regular },
+      thin: { fontFamily: TYPOGRAPHY.fontFamily.regular },
+    },
+    roundness: BORDER_RADIUS.sm,
+  };
+
+  if (!fontsLoaded) {
+    return null; // Show nothing while fonts load
+  }
 
   return (
     <ClerkProvider
@@ -216,10 +239,10 @@ export default function App() {
         },
       }}
     >
-      <PaperProvider>
-        <StatusBar 
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
-          backgroundColor={isDarkMode ? '#1a1a1a' : '#ffffff'}
+      <PaperProvider theme={paperTheme}>
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={isDarkMode ? COLORS.dark.background : COLORS.light.background}
         />
         <RootNavigation />
       </PaperProvider>

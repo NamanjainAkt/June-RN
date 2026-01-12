@@ -1,23 +1,22 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Text, useTheme, Surface, IconButton, FAB, Divider, ActivityIndicator } from 'react-native-paper';
-import { AgentCard } from '../../components';
+import { Text } from 'react-native-paper';
+import { AgentCard, Card, Button, Avatar } from '../../components';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
+import { useAppTheme } from '../../hooks';
 import { Agent } from '../../types';
-import { useDynamicFontSize } from '../../hooks';
+import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 
 export function HomeScreen() {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
   const { user } = useAuthStore();
   const { agents, loadSessions, loadAgents } = useChatStore();
+  const { isDarkMode } = useAppTheme();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const headerFontSize = useDynamicFontSize(28);
-  const subtitleFontSize = useDynamicFontSize(14);
-  const sectionTitleFontSize = useDynamicFontSize(20);
+  const colors = isDarkMode ? COLORS.dark : COLORS.light;
 
   useEffect(() => {
     loadAgents();
@@ -40,137 +39,131 @@ export function HomeScreen() {
   const recentAgents = agents.slice(3, 6);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Surface style={styles.header} elevation={0}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <View style={styles.headerContent}>
-          <View>
-            <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: subtitleFontSize }} variant="bodyMedium">
-              Welcome back,
-            </Text>
-            <Text style={{ color: theme.colors.onSurface, fontSize: headerFontSize }} variant="headlineMedium">
-              {user?.name || 'Guest'}
-            </Text>
+          <View style={styles.userInfo}>
+            <Avatar name={user?.name || 'User'} size="md" />
+            <View style={styles.userText}>
+              <Text style={[styles.greeting, { color: colors.secondary }]}>
+                Welcome back,
+              </Text>
+              <Text style={[styles.userName, { color: colors.primary }]}>
+                {user?.name || 'Guest'}
+              </Text>
+            </View>
           </View>
-          <IconButton
-            icon="cog"
-            size={24}
+          <Button
+            variant="ghost"
+            size="sm"
             onPress={() => navigation.navigate('Settings')}
-            iconColor={theme.colors.onSurfaceVariant}
-            style={{ backgroundColor: theme.colors.surfaceVariant }}
-          />
+            style={styles.settingsButton}
+          >
+            <Text style={{ color: colors.secondary }}>⚙️</Text>
+          </Button>
         </View>
-      </Surface>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.accent}
+          />
         }
       >
-        <Text style={[styles.sectionTitle, { color: theme.colors.onSurface, fontSize: sectionTitleFontSize }]} variant="titleLarge">
-          Featured Agents
-        </Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.featuredAgents}
-        >
-          {featuredAgents.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onPress={handleAgentPress}
-            />
-          ))}
-        </ScrollView>
-
-        <Divider style={styles.divider} />
-
-        <Text style={[styles.sectionTitle, { color: theme.colors.onSurface, fontSize: sectionTitleFontSize }]} variant="titleLarge">
-          Quick Access
-        </Text>
-
-        <View style={styles.quickActions}>
-          <Surface 
-            style={[styles.actionCard, { backgroundColor: theme.colors.surfaceVariant }]}
-            onTouchEnd={() => navigation.navigate('Explore')}
+        {/* Featured Agents */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+            Featured Agents
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.featuredAgents}
           >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.primaryContainer }]}>
-              <IconButton
-                icon="chat-outline"
-                size={28}
-                iconColor={theme.colors.primary}
-              />
-            </View>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyMedium">
-              New Chat
-            </Text>
-          </Surface>
-
-          <Surface 
-            style={[styles.actionCard, { backgroundColor: theme.colors.surfaceVariant }]}
-            onTouchEnd={() => navigation.navigate('History')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.secondaryContainer }]}>
-              <IconButton
-                icon="history"
-                size={28}
-                iconColor={theme.colors.secondary}
-              />
-            </View>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyMedium">
-              History
-            </Text>
-          </Surface>
-
-          <Surface 
-            style={[styles.actionCard, { backgroundColor: theme.colors.surfaceVariant }]}
-            onTouchEnd={() => navigation.navigate('CustomAgent')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.tertiaryContainer }]}>
-              <IconButton
-                icon="plus-circle-outline"
-                size={28}
-                iconColor={theme.colors.tertiary}
-              />
-            </View>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyMedium">
-              Create Agent
-            </Text>
-          </Surface>
+            {featuredAgents.map((agent) => (
+              <View key={agent.id} style={styles.agentWrapper}>
+                <AgentCard agent={agent} onPress={handleAgentPress} />
+              </View>
+            ))}
+          </ScrollView>
         </View>
 
-        <Divider style={styles.divider} />
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>
+            Quick Actions
+          </Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.8}>
+              <Card variant="outlined" style={styles.actionCard}>
+                <View style={styles.actionContent}>
+                  <Text style={styles.actionIcon}>💬</Text>
+                  <Text style={[styles.actionText, { color: colors.primary }]}>
+                    New Chat
+                  </Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
 
-        <View style={styles.createAgentSection}>
-          <View style={styles.createAgentHeader}>
-            <View>
-              <Text style={[styles.sectionTitle, { color: theme.colors.onSurface, fontSize: sectionTitleFontSize }]} variant="titleLarge">
-                Create Your Own
-              </Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: subtitleFontSize }} variant="bodyMedium">
-                Build custom AI agents tailored to your needs
-              </Text>
-            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('History')} activeOpacity={0.8}>
+              <Card variant="outlined" style={styles.actionCard}>
+                <View style={styles.actionContent}>
+                  <Text style={styles.actionIcon}>📚</Text>
+                  <Text style={[styles.actionText, { color: colors.primary }]}>
+                    History
+                  </Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('CustomAgent')} activeOpacity={0.8}>
+              <Card variant="outlined" style={styles.actionCard}>
+                <View style={styles.actionContent}>
+                  <Text style={styles.actionIcon}>✨</Text>
+                  <Text style={[styles.actionText, { color: colors.primary }]}>
+                    Create Agent
+                  </Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
           </View>
-
-          <FAB
-            icon="plus"
-            label="Create Custom Agent"
-            onPress={() => navigation.navigate('CustomAgent')}
-            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-            color={theme.colors.onPrimary}
-          />
         </View>
 
-        <Divider style={styles.divider} />
+        {/* Create Agent CTA */}
+        <View style={styles.section}>
+          <Card variant="outlined" style={styles.createAgentCard}>
+            <View style={styles.createAgentContent}>
+              <View style={styles.createAgentText}>
+                <Text style={[styles.createAgentTitle, { color: colors.primary }]}>
+                  Create Your Own
+                </Text>
+                <Text style={[styles.createAgentSubtitle, { color: colors.secondary }]}>
+                  Build custom AI agents tailored to your needs
+                </Text>
+              </View>
+              <Button
+                variant="solid"
+                size="md"
+                onPress={() => navigation.navigate('CustomAgent')}
+                style={styles.createAgentButton}
+              >
+                Create Agent
+              </Button>
+            </View>
+          </Card>
+        </View>
 
+        {/* Recent Agents */}
         {recentAgents.length > 0 && (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onSurface, fontSize: sectionTitleFontSize }]} variant="titleLarge">
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>
               All Agents
             </Text>
             <ScrollView
@@ -179,18 +172,17 @@ export function HomeScreen() {
               contentContainerStyle={styles.featuredAgents}
             >
               {recentAgents.map((agent) => (
-                <AgentCard
-                  key={agent.id}
-                  agent={agent}
-                  onPress={handleAgentPress}
-                />
+                <View key={agent.id} style={styles.agentWrapper}>
+                  <AgentCard agent={agent} onPress={handleAgentPress} />
+                </View>
               ))}
             </ScrollView>
-          </>
+          </View>
         )}
 
+        {/* Footer */}
         <View style={styles.footer}>
-          <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodySmall">
+          <Text style={[styles.footerText, { color: colors.secondaryVariant }]}>
             June AI v1.0.0 • Powered by Gemini 2.5 Flash Lite
           </Text>
         </View>
@@ -204,64 +196,102 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
     paddingTop: 48,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  userText: {
+    marginLeft: SPACING.md,
+  },
+  greeting: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+  },
+  userName: {
+    fontSize: TYPOGRAPHY.sizes.lg,
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingTop: 8,
-    paddingBottom: 24,
+    padding: SPACING.lg,
+    paddingTop: SPACING.md,
+  },
+  section: {
+    marginBottom: SPACING.xl,
   },
   sectionTitle: {
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: TYPOGRAPHY.sizes.xl,
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    marginBottom: SPACING.md,
   },
   featuredAgents: {
-    paddingRight: 16,
-    gap: 12,
+    paddingRight: SPACING.lg,
   },
-  divider: {
-    marginVertical: 16,
+  agentWrapper: {
+    marginRight: SPACING.sm,
   },
   quickActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.md,
   },
   actionCard: {
     flex: 1,
-    padding: 16,
-    borderRadius: 16,
+    padding: SPACING.md,
+  },
+  actionContent: {
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: SPACING.xs,
   },
   actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+    fontSize: 28,
   },
-  createAgentSection: {
-    marginBottom: 8,
+  actionText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    textAlign: 'center',
   },
-  createAgentHeader: {
-    marginBottom: 12,
+  createAgentCard: {
+    padding: SPACING.lg,
   },
-  fab: {
+  createAgentContent: {
+    gap: SPACING.lg,
+  },
+  createAgentText: {
+    gap: SPACING.xs,
+  },
+  createAgentTitle: {
+    fontSize: TYPOGRAPHY.sizes.lg,
+    fontFamily: TYPOGRAPHY.fontFamily.bold,
+  },
+  createAgentSubtitle: {
+    fontSize: TYPOGRAPHY.sizes.base,
+    fontFamily: TYPOGRAPHY.fontFamily.regular,
+  },
+  createAgentButton: {
     alignSelf: 'flex-start',
   },
   footer: {
-    marginTop: 24,
+    marginTop: SPACING.xl,
     alignItems: 'center',
+  },
+  footerText: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    textAlign: 'center',
   },
 });
