@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Icon, useTheme, ActivityIndicator, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { useDynamicFontSize } from '../hooks';
 
 interface ChatInputProps {
   value: string;
@@ -26,6 +27,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
+  const fontSize = useDynamicFontSize(16);
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -65,7 +67,7 @@ export function ChatInput({
         ]}
       >
         <TextInput
-          style={[styles.input, { color: theme.colors.onSurface }]}
+          style={[styles.input, { color: theme.colors.onSurface, fontSize }]}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setFocused(true)}
@@ -125,7 +127,6 @@ const styles = StyleSheet.create({
   input: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
     maxHeight: 100,
   },
   sendButton: {

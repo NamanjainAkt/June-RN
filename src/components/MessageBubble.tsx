@@ -3,6 +3,7 @@ import { StyleSheet, View, Image } from 'react-native';
 import { Text, useTheme, TouchableRipple } from 'react-native-paper';
 import { Message } from '../types';
 import { MarkdownView } from './MarkdownView';
+import { useDynamicFontSize } from '../hooks';
 
 interface MessageBubbleProps {
   message: Message;
@@ -10,6 +11,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const theme = useTheme();
+  const fontSize = useDynamicFontSize(16);
   const isUser = message.role === 'user';
 
   return (

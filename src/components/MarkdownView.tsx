@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { Icon, TouchableRipple, useTheme, Text } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
+import { useDynamicFontSize } from '../hooks';
 
 interface MarkdownViewProps {
   content: string;
@@ -10,6 +11,7 @@ interface MarkdownViewProps {
 
 export function MarkdownView({ content }: MarkdownViewProps) {
   const theme = useTheme();
+  const baseFontSize = useDynamicFontSize(16);
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(content);
@@ -28,28 +30,35 @@ export function MarkdownView({ content }: MarkdownViewProps) {
         style={{
           body: {
             color: theme.colors.onSurface,
-            fontSize: 16,
+            fontSize: baseFontSize,
           },
           heading1: {
             color: theme.colors.primary,
-            fontSize: 24,
+            fontSize: baseFontSize * 1.5,
             fontWeight: 'bold',
           },
           heading2: {
             color: theme.colors.primary,
-            fontSize: 20,
+            fontSize: baseFontSize * 1.25,
             fontWeight: 'bold',
           },
           heading3: {
             color: theme.colors.primary,
-            fontSize: 18,
+            fontSize: baseFontSize * 1.125,
+            fontWeight: '600',
+          },
+          heading4: {
+            color: theme.colors.primary,
+            fontSize: baseFontSize,
             fontWeight: '600',
           },
           bullet_list: {
             color: theme.colors.onSurface,
+            fontSize: baseFontSize,
           },
           ordered_list: {
             color: theme.colors.onSurface,
+            fontSize: baseFontSize,
           },
           blockquote: {
             backgroundColor: theme.colors.surfaceVariant,
@@ -62,15 +71,21 @@ export function MarkdownView({ content }: MarkdownViewProps) {
             paddingHorizontal: 8,
             paddingVertical: 4,
             borderRadius: 4,
+            fontSize: baseFontSize * 0.875,
           },
           code_block: {
             backgroundColor: theme.colors.surfaceVariant,
             padding: 12,
             borderRadius: 8,
             fontFamily: 'monospace',
+            fontSize: baseFontSize * 0.875,
           },
           link: {
             color: theme.colors.primary,
+          },
+          paragraph: {
+            color: theme.colors.onSurface,
+            fontSize: baseFontSize,
           },
         }}
       >

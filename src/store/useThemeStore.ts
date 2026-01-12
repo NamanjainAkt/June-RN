@@ -7,22 +7,43 @@ interface ThemeState {
   theme: ThemeSettings;
   setTheme: (theme: Partial<ThemeSettings>) => void;
   initializeTheme: () => void;
+  toggleDarkMode: () => void;
+  setFontSize: (fontSize: ThemeSettings['fontSize']) => void;
 }
+
+const DEFAULT_THEME: ThemeSettings = {
+  mode: 'system',
+  fontSize: 'medium',
+};
 
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: {
-        mode: 'system',
-        fontSize: 'medium',
-      },
+      theme: DEFAULT_THEME,
       setTheme: (newTheme) => {
         const current = get().theme;
         set({ theme: { ...current, ...newTheme } });
       },
       initializeTheme: () => {
         const stored = get().theme;
-        set({ theme: stored });
+        if (stored && stored.fontSize) {
+          set({ theme: stored });
+        } else {
+          set({ theme: DEFAULT_THEME });
+        }
+      },
+      toggleDarkMode: () => {
+        const current = get().theme;
+        set({
+          theme: {
+            ...current,
+            mode: current.mode === 'dark' ? 'light' : 'dark',
+          },
+        });
+      },
+      setFontSize: (fontSize) => {
+        const current = get().theme;
+        set({ theme: { ...current, fontSize } });
       },
     }),
     {
