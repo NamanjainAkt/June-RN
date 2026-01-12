@@ -28,8 +28,14 @@ export async function generateResponse(
 ): Promise<string> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-lite',
       safetySettings: SAFETY_SETTINGS,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      },
     });
 
     const generationConfig = {
@@ -108,8 +114,14 @@ export async function* generateStreamingResponse(
 ): AsyncGenerator<string> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash-lite',
       safetySettings: SAFETY_SETTINGS,
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      },
     });
 
     const generationConfig = {

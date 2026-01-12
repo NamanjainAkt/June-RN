@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
   Text,
@@ -24,11 +24,30 @@ export function SettingsScreen() {
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   const handleLogout = () => {
-    logout();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            navigation.dispatch(
+              (state: any) => {
+                const routes = [{ name: 'Login' }];
+                return {
+                  ...state,
+                  routes,
+                  index: 0,
+                };
+              }
+            );
+          },
+        },
+      ]
+    );
   };
 
   const toggleTheme = () => {

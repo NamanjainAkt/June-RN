@@ -191,7 +191,7 @@ export function HomeScreen() {
 
         <View style={styles.footer}>
           <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodySmall">
-            June AI v1.0.0 • Powered by Gemini 2.5 Flash
+            June AI v1.0.0 • Powered by Gemini 2.5 Flash Lite
           </Text>
         </View>
       </ScrollView>

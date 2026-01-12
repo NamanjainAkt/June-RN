@@ -71,7 +71,7 @@ export function ChatScreen() {
                 {agent.name}
               </Text>
               <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }} numberOfLines={1}>
-                Gemini 2.5 Flash
+                Gemini 2.5 Flash Lite
               </Text>
             </View>
           </View>
@@ -199,7 +199,7 @@ export function ChatScreen() {
             {agent?.description}
           </Text>
           <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: fontSize * 0.875, marginTop: 8 }} variant="bodySmall">
-            Powered by Gemini 2.5 Flash
+            Powered by Gemini 2.5 Flash Lite
           </Text>
         </View>
       ) : (
