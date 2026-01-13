@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { StatusBar } from 'react-native';
 import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
 import { NavigationIndependentTree } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -191,12 +190,6 @@ function RootNavigation() {
   );
 }
 
-// Create custom font configuration for react-native-paper v5+
-// Map typography hierarchy to proper React Native font weights:
-// - regular → fontWeight: '400'
-// - medium → fontWeight: '500'
-// - light → fontWeight: '300'
-// - thin → fontWeight: '200'
 
 type FontWeight = '400' | '500' | '600' | '700' | '800' | '900';
 
@@ -307,8 +300,7 @@ export default function App() {
     >
       <PaperProvider theme={paperTheme}>
         <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          backgroundColor={isDarkMode ? VERCEL_COLORS.dark.background : VERCEL_COLORS.light.background}
+          hidden={true}
         />
         <RootNavigation />
       </PaperProvider>
