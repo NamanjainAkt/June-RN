@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
-  useTheme,
   Surface,
   TextInput,
   Button,
@@ -16,7 +15,7 @@ import { Agent, AgentCategory } from '../../types';
 import { CATEGORIES } from '../../constants/agents';
 import { db } from '../../services/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { useDynamicFontSize } from '../../hooks';
+import { useDynamicFontSize, useAppTheme } from '../../hooks';
 import { VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 
 const PROMPT_TEMPLATES = [
@@ -72,7 +71,7 @@ const typographyStyles = {
 
 export function CreateAgentScreen() {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
+  const { colors } = useAppTheme();
   const { user } = useAuthStore();
   const { addCustomAgent } = useChatStore();
 
@@ -171,7 +170,7 @@ export function CreateAgentScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior="padding"
       keyboardVerticalOffset={100}
     >
@@ -180,9 +179,9 @@ export function CreateAgentScreen() {
           icon="arrow-left"
           size={24}
           onPress={() => navigation.goBack()}
-          iconColor={theme.colors.onSurface}
+          iconColor={colors.textPrimary}
         />
-        <Text style={[typographyStyles.headlineMedium, { color: theme.colors.onSurface }]}>
+        <Text style={[typographyStyles.headlineMedium, { color: colors.textPrimary }]}>
           Create Custom Agent
         </Text>
       </Surface>
@@ -193,7 +192,7 @@ export function CreateAgentScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[typographyStyles.bodyMedium, { color: theme.colors.onSurfaceVariant }]}>
+        <Text style={[typographyStyles.bodyMedium, { color: colors.textSecondary }]}>
           Create a personalized AI agent tailored to your specific needs
         </Text>
 
@@ -210,7 +209,7 @@ export function CreateAgentScreen() {
             style={[styles.input, { fontSize }]}
             mode="outlined"
             placeholder="e.g., Legal Document Assistant"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+            placeholderTextColor={colors.textSecondary}
             error={!!errors.name}
           />
           {errors.name ? (
@@ -231,7 +230,7 @@ export function CreateAgentScreen() {
             style={[styles.input, { fontSize }]}
             mode="outlined"
             placeholder="What does this agent do?"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+            placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={2}
             error={!!errors.description}
@@ -242,7 +241,7 @@ export function CreateAgentScreen() {
             </HelperText>
           ) : null}
 
-          <Text style={[styles.label, { color: theme.colors.onSurface, fontSize: labelFontSize }]}>
+          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
             Category
           </Text>
           <View style={styles.categories}>
@@ -256,15 +255,15 @@ export function CreateAgentScreen() {
                   {
                     backgroundColor:
                       category === cat.value
-                        ? theme.colors.primaryContainer
-                        : theme.colors.surfaceVariant,
+                        ? colors.surfaceActive
+                        : colors.surface,
                   },
                 ]}
                 textStyle={{
                   color:
                     category === cat.value
-                      ? theme.colors.primary
-                      : theme.colors.onSurfaceVariant,
+                      ? colors.accent
+                      : colors.textSecondary,
                   fontSize: labelFontSize,
                 }}
               >
@@ -285,7 +284,7 @@ export function CreateAgentScreen() {
             style={[styles.input, styles.promptInput, { fontSize }]}
             mode="outlined"
             placeholder="Define how this agent should behave..."
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+            placeholderTextColor={colors.textSecondary}
             multiline
             numberOfLines={6}
             textAlignVertical="top"
@@ -297,7 +296,7 @@ export function CreateAgentScreen() {
             </HelperText>
           ) : null}
 
-          <Text style={[typographyStyles.bodySmall, { color: theme.colors.onSurfaceVariant }]}>
+          <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
             Prompt Templates
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -316,7 +315,7 @@ export function CreateAgentScreen() {
             </View>
           </ScrollView>
 
-          <Text style={[typographyStyles.bodySmall, { color: theme.colors.onSurfaceVariant }]}>
+          <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
             Be specific about the agent&apos;s role, expertise, and communication style
           </Text>
 

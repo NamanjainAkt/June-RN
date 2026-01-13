@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { View, ViewStyle, TextInput as RNTextInput, TextInputProps as RNTextInputProps, TextStyle } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
 import { VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 

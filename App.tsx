@@ -259,7 +259,16 @@ export default function App() {
   });
 
   const paperTheme = {
-    colors: isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light,
+    colors: {
+      ...(isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light),
+      // Map React Native Paper color names to Vercel equivalents
+      primary: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).accent,
+      onSurface: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).textPrimary,
+      onSurfaceVariant: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).textSecondary,
+      surfaceVariant: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).surface,
+      primaryContainer: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).surfaceActive,
+      error: (isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light).error,
+    },
     fonts,
     roundness: VERCEL_BORDER_RADIUS.sm,
   };

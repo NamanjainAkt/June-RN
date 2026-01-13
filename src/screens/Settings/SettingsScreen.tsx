@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
-  useTheme,
   Surface,
   Switch,
   IconButton,
@@ -17,10 +16,9 @@ import { FONT_SIZE_LABELS } from '../../constants/agents';
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
-  const theme = useTheme();
   const { user, logout, isSignedIn } = useAuthStore();
   const { theme: themeSettings, setTheme } = useThemeStore();
-  const { typography } = useAppTheme();
+  const { colors, typography } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   const handleLogout = () => {
@@ -51,9 +49,9 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
-        <Surface style={[styles.profileCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <Surface style={[styles.profileCard, { backgroundColor: colors.surface }]}>
           <View style={styles.profileInfo}>
             {user?.imageUrl ? (
               <Avatar.Image source={{ uri: user.imageUrl }} size={64} />
@@ -61,41 +59,41 @@ export function SettingsScreen() {
               <Avatar.Text
                 size={64}
                 label={user?.name?.charAt(0) || 'G'}
-                style={{ backgroundColor: theme.colors.primaryContainer }}
-                labelStyle={{ color: theme.colors.primary }}
+                style={{ backgroundColor: colors.surfaceActive }}
+                labelStyle={{ color: colors.accent }}
               />
             )}
             <View style={styles.profileText}>
-              <Text style={{ fontSize: typography.sizes.lg, fontFamily: typography.fontFamily.semibold, color: theme.colors.onSurface }}>
+              <Text style={{ fontSize: typography.sizes.lg, fontFamily: typography.fontFamily.semibold, color: colors.textPrimary }}>
                 {user?.name || 'Guest User'}
               </Text>
-              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
+              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
                 {user?.email || 'guest@example.com'}
               </Text>
             </View>
           </View>
         </Surface>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: theme.colors.onSurfaceVariant }}>
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary }}>
           Appearance
         </Text>
 
-        <Surface style={[styles.settingCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <Surface style={[styles.settingCard, { backgroundColor: colors.surface }]}>
           <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
               Dark Mode
             </Text>
             <Switch
               value={themeSettings.mode === 'dark'}
               onValueChange={toggleTheme}
-              color={theme.colors.primary}
+              color={colors.accent}
             />
           </View>
 
           <Divider style={styles.divider} />
 
           <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
               Font Size
             </Text>
             <View style={styles.fontSizeControls}>
@@ -104,9 +102,9 @@ export function SettingsScreen() {
                 size={20}
                 onPress={decreaseFontSize}
                 disabled={fontSize === 'small'}
-                iconColor={theme.colors.onSurface}
+                iconColor={colors.textPrimary}
               />
-              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
+              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
                 {FONT_SIZE_LABELS[fontSize]}
               </Text>
               <IconButton
@@ -114,22 +112,22 @@ export function SettingsScreen() {
                 size={20}
                 onPress={increaseFontSize}
                 disabled={fontSize === 'xlarge'}
-                iconColor={theme.colors.onSurface}
+                iconColor={colors.textPrimary}
               />
             </View>
           </View>
         </Surface>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: theme.colors.onSurfaceVariant }}>
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary }}>
           Account
         </Text>
 
-        <Surface style={[styles.settingCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+        <Surface style={[styles.settingCard, { backgroundColor: colors.surface }]}>
           <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
               Sync Data
             </Text>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
               Enabled
             </Text>
           </View>
@@ -141,13 +139,13 @@ export function SettingsScreen() {
             onPress={handleLogout}
             icon="logout"
             style={styles.logoutButton}
-            textColor={theme.colors.error}
+            textColor={colors.error}
           >
             Log Out
           </Button>
         </View>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
           June AI v1.0.0
         </Text>
       </View>
