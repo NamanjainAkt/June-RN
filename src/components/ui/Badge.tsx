@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
-import { COLORS, BORDER_RADIUS, TYPOGRAPHY } from '../../constants/theme';
+import { VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_SPACING } from '../../constants/vercel-theme';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -19,41 +19,39 @@ export function Badge({
   size = 'md',
   style
 }: BadgeProps) {
-  const { isDarkMode } = useAppTheme();
-
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const { colors, typography, borderRadius, spacing } = useAppTheme();
 
   const getColorStyles = () => {
     switch (color) {
       case 'primary':
         return {
-          backgroundColor: variant === 'solid' ? colors.primary : 'transparent',
-          borderColor: colors.primary,
-          color: variant === 'solid' ? colors.onPrimary : colors.primary,
+          backgroundColor: variant === 'solid' ? colors.textPrimary : 'transparent',
+          borderColor: colors.textPrimary,
+          color: variant === 'solid' ? colors.background : colors.textPrimary,
         };
       case 'secondary':
         return {
-          backgroundColor: variant === 'solid' ? colors.secondary : 'transparent',
-          borderColor: colors.secondary,
-          color: variant === 'solid' ? colors.onSecondary : colors.secondary,
+          backgroundColor: variant === 'solid' ? colors.textSecondary : 'transparent',
+          borderColor: colors.textSecondary,
+          color: variant === 'solid' ? colors.background : colors.textSecondary,
         };
       case 'accent':
         return {
           backgroundColor: variant === 'solid' ? colors.accent : 'transparent',
           borderColor: colors.accent,
-          color: variant === 'solid' ? colors.onPrimary : colors.accent,
+          color: variant === 'solid' ? colors.textPrimary : colors.accent,
         };
       case 'success':
         return {
           backgroundColor: variant === 'solid' ? colors.success : 'transparent',
           borderColor: colors.success,
-          color: variant === 'solid' ? colors.onPrimary : colors.success,
+          color: variant === 'solid' ? colors.textPrimary : colors.success,
         };
       case 'error':
         return {
           backgroundColor: variant === 'solid' ? colors.error : 'transparent',
           borderColor: colors.error,
-          color: variant === 'solid' ? colors.onError : colors.error,
+          color: variant === 'solid' ? colors.textPrimary : colors.error,
         };
       default:
         return {};
@@ -64,15 +62,15 @@ export function Badge({
     switch (size) {
       case 'sm':
         return {
-          paddingHorizontal: 8,
-          paddingVertical: 4,
-          fontSize: TYPOGRAPHY.sizes.xs,
+          paddingHorizontal: spacing.sm,
+          paddingVertical: spacing.xs,
+          fontSize: typography.sizes.xs,
         };
       case 'md':
         return {
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          fontSize: TYPOGRAPHY.sizes.sm,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.xs,
+          fontSize: typography.sizes.sm,
         };
       default:
         return {};
@@ -86,7 +84,7 @@ export function Badge({
     <View
       style={[
         {
-          borderRadius: BORDER_RADIUS.full,
+          borderRadius: borderRadius.full,
           borderWidth: variant === 'outlined' ? 1 : 0,
           backgroundColor: colorStyles.backgroundColor,
           borderColor: colorStyles.borderColor,
@@ -100,7 +98,7 @@ export function Badge({
         style={{
           color: colorStyles.color,
           fontSize: sizeStyles.fontSize,
-          fontFamily: TYPOGRAPHY.fontFamily.medium,
+          fontFamily: typography.fontFamily.medium,
           textAlign: 'center',
         }}
       >

@@ -8,10 +8,10 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { Icon, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Icon, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppTheme } from '../hooks';
-import { COLORS, BORDER_RADIUS, TYPOGRAPHY } from '../constants/theme';
+import { VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../constants/vercel-theme';
 import { Button } from './ui/Button';
 
 interface ChatInputProps {
@@ -31,10 +31,7 @@ export function ChatInput({
   selectedImages,
   isLoading,
 }: ChatInputProps) {
-  const { isDarkMode } = useAppTheme();
-  const theme = useTheme();
-
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const { colors, typography, borderRadius, spacing, layout } = useAppTheme();
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,7 +90,7 @@ export function ChatInput({
   const canSend = (value.trim().length > 0 || selectedImages.length > 0) && !isLoading;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
       {/* Image Preview */}
       {selectedImages.length > 0 && (
         <View style={styles.imagePreviewContainer}>
@@ -113,7 +110,7 @@ export function ChatInput({
                   style={[styles.removeButton, { backgroundColor: colors.error }]}
                   onPress={() => removeImage(index)}
                 >
-                  <Icon source="close" size={16} color={colors.onError} />
+                  <Icon source="close" size={16} color={colors.textPrimary} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -130,23 +127,23 @@ export function ChatInput({
         >
           <Icon
             source="image-outline"
-            size={24}
-            color={colors.secondary}
+            size={layout.components.iconSize.md}
+            color={colors.textSecondary}
           />
         </TouchableOpacity>
 
         <View style={[styles.textInputWrapper, { borderColor: colors.border }]}>
           <Icon
             source="message-outline"
-            size={20}
-            color={colors.secondaryVariant}
+            size={layout.components.iconSize.sm}
+            color={colors.textTertiary}
           />
           <TextInput
             value={value}
             onChangeText={onChangeText}
             placeholder="Ask anything..."
-            placeholderTextColor={colors.secondaryVariant}
-            style={[styles.textInput, { color: colors.onSurface }]}
+            placeholderTextColor={colors.textTertiary}
+            style={[styles.textInput, { color: colors.textPrimary }]}
             multiline
             maxLength={2000}
             editable={!isLoading}
@@ -162,9 +159,9 @@ export function ChatInput({
           style={styles.sendButton}
         >
           {isLoading ? (
-            <ActivityIndicator size="small" color={canSend ? colors.onPrimary : colors.secondary} />
+            <ActivityIndicator size="small" color={colors.textPrimary} />
           ) : (
-            <Icon source="send" size={20} color={canSend ? colors.onPrimary : colors.secondary} />
+            <Icon source="send" size={layout.components.iconSize.sm} color={colors.textPrimary} />
           )}
         </Button>
       </View>
@@ -175,43 +172,42 @@ export function ChatInput({
 const styles = StyleSheet.create({
   container: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
   },
   imagePreviewContainer: {
-    padding: 16,
-    paddingBottom: 8,
+    padding: VERCEL_SPACING.md,
+    paddingBottom: VERCEL_SPACING.sm,
   },
   imageScroll: {
-    gap: 8,
+    gap: VERCEL_SPACING.sm,
   },
   imageWrapper: {
     position: 'relative',
   },
   imagePreview: {
-    width: 80,
-    height: 80,
-    borderRadius: BORDER_RADIUS.md,
+    width: VERCEL_LAYOUT.components.avatarSize.lg * 2,
+    height: VERCEL_LAYOUT.components.avatarSize.lg * 2,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
   },
   removeButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: -VERCEL_SPACING.xs,
+    right: -VERCEL_SPACING.xs,
+    width: VERCEL_SPACING.lg,
+    height: VERCEL_SPACING.lg,
+    borderRadius: VERCEL_SPACING.lg / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 12,
-    gap: 8,
+    padding: VERCEL_SPACING.md,
+    gap: VERCEL_SPACING.sm,
   },
   attachButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.sm,
+    width: VERCEL_LAYOUT.components.buttonHeight.md,
+    height: VERCEL_LAYOUT.components.buttonHeight.md,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -219,32 +215,32 @@ const styles = StyleSheet.create({
   },
   textInputWrapper: {
     flex: 1,
-    borderRadius: BORDER_RADIUS.sm,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
     borderWidth: 1,
     backgroundColor: 'transparent',
     position: 'relative',
-    minHeight: 44,
-    maxHeight: 120,
+    minHeight: VERCEL_LAYOUT.components.buttonHeight.md,
+    maxHeight: VERCEL_LAYOUT.components.buttonHeight.lg * 3,
   },
   inputIcon: {
     position: 'absolute',
-    left: 12,
-    top: 10,
+    left: VERCEL_SPACING.md,
+    top: VERCEL_SPACING.sm,
     zIndex: 1,
   },
   textInput: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
-    paddingLeft: 44,
-    paddingRight: 12,
-    paddingVertical: 12,
-    minHeight: 44,
-    maxHeight: 120,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+    paddingLeft: VERCEL_LAYOUT.components.buttonHeight.md,
+    paddingRight: VERCEL_SPACING.md,
+    paddingVertical: VERCEL_SPACING.md,
+    minHeight: VERCEL_LAYOUT.components.buttonHeight.md,
+    maxHeight: VERCEL_LAYOUT.components.buttonHeight.lg * 3,
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.sm,
+    width: VERCEL_LAYOUT.components.buttonHeight.md,
+    height: VERCEL_LAYOUT.components.buttonHeight.md,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
     paddingHorizontal: 0,
     paddingVertical: 0,
   },

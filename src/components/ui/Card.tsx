@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ViewStyle } from 'react-native';
 import { Surface } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
-import { COLORS, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { VERCEL_BORDER_RADIUS, VERCEL_SHADOWS, VERCEL_SPACING } from '../../constants/vercel-theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -19,38 +19,36 @@ export function Card({
   padding = 'md',
   margin
 }: CardProps) {
-  const { isDarkMode } = useAppTheme();
+  const { colors, borderRadius, shadows, spacing } = useAppTheme();
 
   const getPadding = () => {
     switch (padding) {
-      case 'xs': return 8;
-      case 'sm': return 12;
-      case 'md': return 16;
-      case 'lg': return 24;
-      case 'xl': return 32;
-      default: return 16;
+      case 'xs': return spacing.sm;
+      case 'sm': return spacing.md;
+      case 'md': return spacing.lg;
+      case 'lg': return spacing.xl;
+      case 'xl': return spacing['2xl'];
+      default: return spacing.lg;
     }
   };
 
   const getMargin = () => {
     switch (margin) {
-      case 'xs': return 4;
-      case 'sm': return 8;
-      case 'md': return 16;
-      case 'lg': return 24;
-      case 'xl': return 32;
+      case 'xs': return spacing.xs;
+      case 'sm': return spacing.sm;
+      case 'md': return spacing.md;
+      case 'lg': return spacing.lg;
+      case 'xl': return spacing.xl;
       default: return 0;
     }
   };
 
   const getVariantStyle = () => {
-    const colors = isDarkMode ? COLORS.dark : COLORS.light;
-
     switch (variant) {
       case 'elevated':
         return {
           backgroundColor: colors.surface,
-          ...SHADOWS.medium,
+          ...shadows.medium,
         };
       case 'outlined':
         return {
@@ -60,7 +58,7 @@ export function Card({
         };
       case 'filled':
         return {
-          backgroundColor: colors.surfaceElevated,
+          backgroundColor: colors.surfaceHover,
         };
       default:
         return {};
@@ -71,7 +69,7 @@ export function Card({
     <Surface
       style={[
         {
-          borderRadius: BORDER_RADIUS.md,
+          borderRadius: borderRadius.md,
           padding: getPadding(),
           margin: getMargin(),
         },

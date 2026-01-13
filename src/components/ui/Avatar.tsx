@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
-import { COLORS, BORDER_RADIUS, TYPOGRAPHY } from '../../constants/theme';
+import { VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 
 interface AvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -12,30 +12,19 @@ interface AvatarProps {
 }
 
 export function Avatar({ size = 'md', source, name, style }: AvatarProps) {
-  const { isDarkMode } = useAppTheme();
+  const { colors, typography, borderRadius, layout } = useAppTheme();
 
-  const getSize = () => {
-    switch (size) {
-      case 'sm': return 32;
-      case 'md': return 40;
-      case 'lg': return 56;
-      case 'xl': return 72;
-      default: return 40;
-    }
-  };
+  const avatarSize = layout.components.avatarSize[size];
 
   const getTextSize = () => {
     switch (size) {
-      case 'sm': return TYPOGRAPHY.sizes.sm;
-      case 'md': return TYPOGRAPHY.sizes.base;
-      case 'lg': return TYPOGRAPHY.sizes.lg;
-      case 'xl': return TYPOGRAPHY.sizes.xl;
-      default: return TYPOGRAPHY.sizes.base;
+      case 'sm': return typography.sizes.sm;
+      case 'md': return typography.sizes.base;
+      case 'lg': return typography.sizes.lg;
+      case 'xl': return typography.sizes.xl;
+      default: return typography.sizes.base;
     }
   };
-
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
-  const avatarSize = getSize();
 
   const initials = name
     ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -47,8 +36,8 @@ export function Avatar({ size = 'md', source, name, style }: AvatarProps) {
         {
           width: avatarSize,
           height: avatarSize,
-          borderRadius: BORDER_RADIUS.full,
-          backgroundColor: colors.primary,
+          borderRadius: avatarSize / 2,
+          backgroundColor: colors.accent,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -57,9 +46,9 @@ export function Avatar({ size = 'md', source, name, style }: AvatarProps) {
     >
       <Text
         style={{
-          color: colors.onPrimary,
+          color: colors.textPrimary,
           fontSize: getTextSize(),
-          fontFamily: TYPOGRAPHY.fontFamily.semibold,
+          fontFamily: typography.fontFamily.semibold,
           textAlign: 'center',
         }}
       >

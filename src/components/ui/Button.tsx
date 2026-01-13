@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, ViewStyle, TextStyle, StyleProp } from 'react-native';
 import { Text } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
-import { COLORS, BORDER_RADIUS, TYPOGRAPHY } from '../../constants/theme';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -27,47 +27,29 @@ export function Button({
   textStyle,
   fullWidth = false,
 }: ButtonProps) {
-  const { isDarkMode } = useAppTheme();
+  const { colors, typography, borderRadius, spacing, layout } = useAppTheme();
 
   const getSizeStyles = () => {
-    switch (size) {
-      case 'sm':
-        return {
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          minHeight: 36,
-        };
-      case 'md':
-        return {
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          minHeight: 44,
-        };
-      case 'lg':
-        return {
-          paddingHorizontal: 24,
-          paddingVertical: 16,
-          minHeight: 52,
-        };
-      default:
-        return {};
-    }
+    const height = layout.components.buttonHeight[size];
+    return {
+      height,
+      paddingHorizontal: size === 'sm' ? spacing.md : spacing.lg,
+      paddingVertical: spacing.sm,
+    };
   };
 
   const getVariantStyles = () => {
-    const colors = isDarkMode ? COLORS.dark : COLORS.light;
-
     switch (variant) {
       case 'solid':
         return {
-          backgroundColor: disabled ? colors.tertiary : colors.primary,
+          backgroundColor: disabled ? colors.surfaceActive : colors.accent,
           borderWidth: 0,
         };
       case 'outlined':
         return {
           backgroundColor: 'transparent',
           borderWidth: 1,
-          borderColor: disabled ? colors.tertiary : colors.border,
+          borderColor: disabled ? colors.surfaceActive : colors.border,
         };
       case 'ghost':
         return {
@@ -80,31 +62,29 @@ export function Button({
   };
 
   const getTextColor = () => {
-    const colors = isDarkMode ? COLORS.dark : COLORS.light;
-
-    if (disabled) return colors.tertiary;
+    if (disabled) return colors.textTertiary;
 
     switch (variant) {
       case 'solid':
-        return colors.onPrimary;
+        return colors.textPrimary;
       case 'outlined':
       case 'ghost':
-        return colors.primary;
+        return colors.textPrimary;
       default:
-        return colors.primary;
+        return colors.textPrimary;
     }
   };
 
   const getTextSize = () => {
     switch (size) {
       case 'sm':
-        return TYPOGRAPHY.sizes.sm;
+        return typography.sizes.sm;
       case 'md':
-        return TYPOGRAPHY.sizes.base;
+        return typography.sizes.base;
       case 'lg':
-        return TYPOGRAPHY.sizes.lg;
+        return typography.sizes.lg;
       default:
-        return TYPOGRAPHY.sizes.base;
+        return typography.sizes.base;
     }
   };
 
@@ -114,7 +94,7 @@ export function Button({
       disabled={loading || disabled}
       style={[
         {
-          borderRadius: BORDER_RADIUS.sm,
+          borderRadius: borderRadius.md,
           alignItems: 'center',
           justifyContent: 'center',
           opacity: disabled ? 0.5 : 1,
@@ -131,7 +111,7 @@ export function Button({
           {
             color: getTextColor(),
             fontSize: getTextSize(),
-            fontFamily: TYPOGRAPHY.fontFamily.medium,
+            fontFamily: typography.fontFamily.medium,
             textAlign: 'center',
           },
           textStyle,

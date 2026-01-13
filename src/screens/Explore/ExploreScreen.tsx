@@ -1,13 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Text } from 'react-native-paper';
-import { AgentCard, Badge, Input } from '../../components';
+import { AgentCard } from '../../components';
+import { VercelInput, VercelButton } from '../../components/vercel/VercelComponents';
+import { VercelAgentCard } from '../../components/vercel/VercelHomeComponents';
 import { useChatStore } from '../../store/useChatStore';
 import { useAppTheme } from '../../hooks';
 import { Agent, AgentCategory } from '../../types';
 import { CATEGORIES } from '../../constants/agents';
-import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
+import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT } from '../../constants/vercel-theme';
+import { Dimensions } from 'react-native';
 
 export function ExploreScreen() {
   const navigation = useNavigation<any>();
@@ -17,7 +19,21 @@ export function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState<AgentCategory | 'all'>('all');
   const [refreshing, setRefreshing] = useState(false);
 
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const colors = getVercelColors(isDarkMode);
+  const screenWidth = Dimensions.get('window').width;
+  
+  // Responsive grid configuration
+  const getResponsiveGrid = () => {
+    if (screenWidth >= VERCEL_LAYOUT.breakpoints.lg) {
+      return { numColumns: 3, cardWidth: (screenWidth - VERCEL_SPACING.xl * 2 - VERCEL_SPACING.md * 2) / 3 };
+    } else if (screenWidth >= VERCEL_LAYOUT.breakpoints.md) {
+      return { numColumns: 2, cardWidth: (screenWidth - VERCEL_SPACING.lg * 2 - VERCEL_SPACING.sm) / 2 };
+    } else {
+      return { numColumns: 2, cardWidth: (screenWidth - VERCEL_SPACING.md * 2 - VERCEL_SPACING.xs) / 2 };
+    }
+  };
+
+  const { numColumns } = getResponsiveGrid();
 
   const filteredAgents = useMemo(() => {
     return agents.filter((agent) => {
@@ -51,28 +67,29 @@ export function ExploreScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.primary }]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
           Explore Agents
         </Text>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Input
+          <VercelInput
+            isDarkMode={isDarkMode}
             placeholder="Search agents..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             style={styles.searchInput}
-            fullWidth
           />
           {searchQuery ? (
-            <View style={[styles.clearButton, { backgroundColor: colors.secondaryVariant }]}>
-              <Text style={{ color: colors.onSecondary, fontSize: 16 }} onPress={clearSearch}>
-                ✕
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={[styles.clearButton, { backgroundColor: colors.surfaceActive }]}
+              onPress={clearSearch}
+            >
+              <Text style={{ color: colors.textPrimary, fontSize: 16 }}>✕</Text>
+            </TouchableOpacity>
           ) : (
-            <View style={[styles.searchIcon, { backgroundColor: colors.secondaryVariant }]}>
-              <Text style={{ color: colors.onSecondary, fontSize: 16 }}>🔍</Text>
+            <View style={[styles.searchIcon, { backgroundColor: colors.surfaceActive }]}>
+              <Text style={{ color: colors.textSecondary, fontSize: 16 }}>🔍</Text>
             </View>
           )}
         </View>
@@ -88,14 +105,23 @@ export function ExploreScreen() {
                 onPress={() => setSelectedCategory(item.value as AgentCategory | 'all')}
                 activeOpacity={0.8}
               >
-                <Badge
-                  variant={selectedCategory === item.value ? 'solid' : 'outlined'}
-                  color={selectedCategory === item.value ? 'accent' : 'secondary'}
-                  size="md"
-                  style={styles.categoryChip}
-                >
-                  {item.label}
-                </Badge>
+                <View style={[
+                  styles.categoryChip,
+                  selectedCategory === item.value 
+                    ? { backgroundColor: colors.accent } 
+                    : { backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1 }
+                ]}>
+                  <Text style={[
+                    styles.categoryChipText,
+                    { 
+                      color: selectedCategory === item.value 
+                        ? colors.textPrimary 
+                        : colors.textSecondary 
+                    }
+                  ]}>
+                    {item.label}
+                  </Text>
+                </View>
               </TouchableOpacity>
             )}
             keyExtractor={(item) => item.value}
@@ -107,7 +133,7 @@ export function ExploreScreen() {
 
       {/* Results Count */}
       <View style={styles.resultsContainer}>
-        <Text style={[styles.resultsText, { color: colors.secondaryVariant }]}>
+        <Text style={[styles.resultsText, { color: colors.textSecondary }]}>
           {filteredAgents.length} agent{filteredAgents.length !== 1 ? 's' : ''} found
         </Text>
       </View>
@@ -116,13 +142,17 @@ export function ExploreScreen() {
       <FlatList
         data={filteredAgents}
         renderItem={({ item }) => (
-          <View style={styles.agentItem}>
-            <AgentCard agent={item} onPress={handleAgentPress} />
+          <View style={[styles.agentItem, { width: getResponsiveGrid().cardWidth }]}>
+            <VercelAgentCard
+              isDarkMode={isDarkMode}
+              agent={item}
+              onPress={handleAgentPress}
+            />
           </View>
         )}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.agentsGrid}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns === 3 ? styles.agentsGrid3 : styles.agentsGrid}
         contentContainerStyle={styles.agentsList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -134,13 +164,13 @@ export function ExploreScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyIcon, { color: colors.secondaryVariant }]}>
+            <Text style={[styles.emptyIcon, { color: colors.textTertiary }]}>
               🔍
             </Text>
-            <Text style={[styles.emptyTitle, { color: colors.primary }]}>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
               No agents found
             </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
               Try adjusting your search or filters
             </Text>
           </View>
@@ -156,17 +186,17 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 48,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
+    paddingHorizontal: VERCEL_SPACING.lg,
+    paddingBottom: VERCEL_SPACING.md,
   },
   title: {
-    fontSize: TYPOGRAPHY.sizes['2xl'],
-    fontFamily: TYPOGRAPHY.fontFamily.bold,
-    marginBottom: SPACING.lg,
+    fontSize: VERCEL_TYPOGRAPHY.sizes['2xl'],
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    marginBottom: VERCEL_SPACING.lg,
   },
   searchContainer: {
     position: 'relative',
-    marginBottom: SPACING.md,
+    marginBottom: VERCEL_SPACING.md,
   },
   searchInput: {
     paddingRight: 50,
@@ -192,57 +222,67 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoriesContainer: {
-    marginBottom: SPACING.md,
+    marginBottom: VERCEL_SPACING.md,
   },
   categoriesList: {
-    gap: SPACING.sm,
+    gap: VERCEL_SPACING.sm,
   },
   chipWrapper: {
-    marginRight: SPACING.sm,
+    marginRight: VERCEL_SPACING.sm,
   },
   categoryChip: {
-    cursor: 'pointer',
+    paddingHorizontal: VERCEL_SPACING.md,
+    paddingVertical: VERCEL_SPACING.sm,
+    borderRadius: VERCEL_BORDER_RADIUS.full,
+  },
+  categoryChipText: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   resultsContainer: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: VERCEL_SPACING.lg,
+    paddingVertical: VERCEL_SPACING.sm,
   },
   resultsText: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   agentsGrid: {
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: VERCEL_SPACING.lg,
+  },
+  agentsGrid3: {
+    justifyContent: 'space-between',
+    paddingHorizontal: VERCEL_SPACING.xl,
   },
   agentsList: {
-    paddingBottom: SPACING.xl,
+    paddingBottom: VERCEL_SPACING.xl,
     flexGrow: 1,
   },
   agentItem: {
     flex: 1,
-    margin: SPACING.xs,
+    margin: VERCEL_SPACING.xs,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING['3xl'],
+    padding: VERCEL_SPACING['3xl'],
     marginTop: 100,
   },
   emptyIcon: {
     fontSize: 64,
-    marginBottom: SPACING.md,
+    marginBottom: VERCEL_SPACING.md,
   },
   emptyTitle: {
-    fontSize: TYPOGRAPHY.sizes.xl,
-    fontFamily: TYPOGRAPHY.fontFamily.bold,
-    marginBottom: SPACING.xs,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    marginBottom: VERCEL_SPACING.xs,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     textAlign: 'center',
   },
 });

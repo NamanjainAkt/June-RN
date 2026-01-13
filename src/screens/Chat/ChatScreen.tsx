@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Keyboard } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, Keyboard, Text, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Text } from 'react-native-paper';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { ChatInput, MessageBubble, Avatar, Button } from '../../components';
+import { ChatInput, Avatar } from '../../components';
+import { VercelMessageBubble } from '../../components/vercel/VercelChatComponents';
+import { VercelAvatar, VercelButton } from '../../components/vercel/VercelComponents';
 import { generateResponse } from '../../services/gemini';
 import { useAppTheme } from '../../hooks';
 import { Message } from '../../types';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../constants/theme';
+import { getVercelColors, VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../../constants/vercel-theme';
+import { Dimensions } from 'react-native';
 
 type ChatRouteParams = {
   agentId: string;
@@ -36,10 +38,19 @@ export function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const colors = getVercelColors(isDarkMode);
   const agentId = route.params?.agentId;
   const sessionId = route.params?.sessionId;
   const agent = agents.find((a) => a.id === agentId);
+  
+  // Responsive configuration
+  const screenWidth = Dimensions.get('window').width;
+  const isLargeScreen = screenWidth >= VERCEL_LAYOUT.breakpoints.lg;
+  
+  const getResponsivePadding = () => {
+    if (isLargeScreen) return VERCEL_SPACING.xl;
+    return VERCEL_SPACING.lg;
+  };
 
   useEffect(() => {
     if (agentId) {
@@ -60,21 +71,23 @@ export function ChatScreen() {
       navigation.setOptions({
         headerTitle: () => (
           <View style={styles.headerTitle}>
-            <Avatar name={agent.name} size="md" />
+            <VercelAvatar 
+              isDarkMode={isDarkMode} 
+              name={agent.name} 
+              size="md" 
+            />
             <View style={styles.headerText}>
-              <Text style={[styles.headerName, { color: colors.primary }]}>
+              <Text style={[styles.headerName, { color: colors.textPrimary }]}>
                 {agent.name}
               </Text>
-              <Text style={[styles.headerModel, { color: colors.secondaryVariant }]}>
+              <Text style={[styles.headerModel, { color: colors.textSecondary }]}>
                 Gemini 2.5 Flash Lite
               </Text>
             </View>
           </View>
         ),
         headerRight: () => (
-          <Button
-            variant="ghost"
-            size="sm"
+          <TouchableOpacity
             onPress={() => {
               const newAgent = agents.find((a) => a.id === agentId);
               if (newAgent) {
@@ -85,8 +98,8 @@ export function ChatScreen() {
             }}
             style={styles.newChatButton}
           >
-            <Text style={{ color: colors.secondary, fontSize: 16 }}>➕</Text>
-          </Button>
+            <Text style={{ color: colors.textSecondary, fontSize: 16 }}>➕</Text>
+          </TouchableOpacity>
         ),
       });
     }
@@ -168,18 +181,18 @@ export function ChatScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.primaryContainer }]}>
-            <Text style={{ color: colors.primary, fontSize: 48 }}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceActive }]}>
+            <Text style={{ color: colors.textPrimary, fontSize: 48 }}>
               {agent?.name?.charAt(0) || 'A'}
             </Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.primary }]}>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
             Chat with {agent?.name}
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             {agent?.description}
           </Text>
-          <Text style={[styles.emptyModel, { color: colors.secondaryVariant }]}>
+          <Text style={[styles.emptyModel, { color: colors.textTertiary }]}>
             Powered by Gemini 2.5 Flash Lite
           </Text>
         </View>
@@ -187,7 +200,14 @@ export function ChatScreen() {
         <FlatList
           ref={flatListRef}
           data={messages}
-          renderItem={({ item }) => <MessageBubble message={item} />}
+          renderItem={({ item }) => (
+            <VercelMessageBubble 
+              message={item} 
+              isDarkMode={isDarkMode}
+              agentName={agent?.name}
+              isUser={item.role === 'user'}
+            />
+          )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
@@ -197,11 +217,11 @@ export function ChatScreen() {
           ListFooterComponent={
             isTyping ? (
               <View style={styles.typingIndicator}>
-                <View style={[styles.typingBubble, { backgroundColor: colors.surfaceVariant }]}>
+                <View style={[styles.typingBubble, { backgroundColor: colors.surfaceActive }]}>
                   <View style={styles.typingDots}>
-                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
-                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
-                    <View style={[styles.dot, { backgroundColor: colors.secondaryVariant }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
+                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
                   </View>
                 </View>
               </View>
@@ -213,7 +233,7 @@ export function ChatScreen() {
       {(isLoading || isTyping) && (
         <View style={styles.loadingIndicator}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.secondaryVariant }]}>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
             {isTyping ? 'Thinking...' : 'Loading...'}
           </Text>
         </View>
@@ -242,86 +262,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerText: {
-    marginLeft: SPACING.md,
+    marginLeft: VERCEL_SPACING.md,
   },
   headerName: {
-    fontSize: TYPOGRAPHY.sizes.lg,
-    fontFamily: TYPOGRAPHY.fontFamily.semibold,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
   },
   headerModel: {
-    fontSize: TYPOGRAPHY.sizes.xs,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
   newChatButton: {
     width: 40,
     height: 40,
+    padding: VERCEL_SPACING.sm,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING.xl,
+    padding: VERCEL_SPACING.xl,
   },
   emptyIcon: {
     width: 80,
     height: 80,
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: VERCEL_BORDER_RADIUS.full,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: VERCEL_SPACING.lg,
   },
   emptyTitle: {
-    fontSize: TYPOGRAPHY.sizes['2xl'],
-    fontFamily: TYPOGRAPHY.fontFamily.bold,
-    marginBottom: SPACING.xs,
+    fontSize: VERCEL_TYPOGRAPHY.sizes['2xl'],
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    marginBottom: VERCEL_SPACING.xs,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     textAlign: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: VERCEL_SPACING.md,
   },
   emptyModel: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
     textAlign: 'center',
   },
   messagesList: {
-    padding: SPACING.lg,
-    paddingBottom: SPACING.md,
+    padding: VERCEL_SPACING.lg,
+    paddingBottom: VERCEL_SPACING.md,
+    maxWidth: VERCEL_LAYOUT.breakpoints.lg,
+    alignSelf: 'center',
+    width: '100%',
   },
   typingIndicator: {
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
+    paddingVertical: VERCEL_SPACING.sm,
+    paddingHorizontal: VERCEL_SPACING.lg,
   },
   typingBubble: {
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    padding: VERCEL_SPACING.md,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
     alignSelf: 'flex-start',
   },
   typingDots: {
     flexDirection: 'row',
-    gap: SPACING.xs,
+    gap: VERCEL_SPACING.xs,
   },
   dot: {
     width: 8,
     height: 8,
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: VERCEL_BORDER_RADIUS.full,
   },
   loadingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    padding: VERCEL_SPACING.md,
+    paddingHorizontal: VERCEL_SPACING.lg,
   },
   loadingText: {
-    marginLeft: SPACING.sm,
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    marginLeft: VERCEL_SPACING.sm,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   inputContainer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
 });

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
-  Text,
   useTheme,
   Surface,
   TextInput,
@@ -16,8 +15,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { Agent, AgentCategory } from '../../types';
 import { CATEGORIES } from '../../constants/agents';
 import { db } from '../../services/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useDynamicFontSize } from '../../hooks';
+import { VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 
 const PROMPT_TEMPLATES = [
   {
@@ -37,6 +37,38 @@ const PROMPT_TEMPLATES = [
     prompt: 'You are a technical expert. Break down complex technical concepts into easy-to-understand explanations. Use analogies and real-world examples. Focus on clarity and accuracy while making technical information accessible.',
   },
 ];
+
+// Typography styles using proper fontWeight values
+// Mapping: regular → '400', medium → '500', light → '300', thin → '200'
+const typographyStyles = {
+  headlineMedium: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
+    fontWeight: '600' as const,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.xl,
+  },
+  bodyLarge: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontWeight: '400' as const,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.base,
+  },
+  bodyMedium: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontWeight: '400' as const,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
+  },
+  bodySmall: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+    fontWeight: '400' as const,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.xs,
+  },
+  labelMedium: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontWeight: '500' as const,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
+  },
+};
 
 export function CreateAgentScreen() {
   const navigation = useNavigation<any>();
@@ -150,7 +182,7 @@ export function CreateAgentScreen() {
           onPress={() => navigation.goBack()}
           iconColor={theme.colors.onSurface}
         />
-        <Text style={{ color: theme.colors.onSurface, fontSize: fontSize }} variant="headlineMedium">
+        <Text style={[typographyStyles.headlineMedium, { color: theme.colors.onSurface }]}>
           Create Custom Agent
         </Text>
       </Surface>
@@ -161,7 +193,7 @@ export function CreateAgentScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={{ color: theme.colors.onSurfaceVariant, fontSize }} variant="bodyMedium">
+        <Text style={[typographyStyles.bodyMedium, { color: theme.colors.onSurfaceVariant }]}>
           Create a personalized AI agent tailored to your specific needs
         </Text>
 
@@ -210,7 +242,7 @@ export function CreateAgentScreen() {
             </HelperText>
           ) : null}
 
-          <Text style={[styles.label, { color: theme.colors.onSurface, fontSize: labelFontSize }]} variant="bodyMedium">
+          <Text style={[styles.label, { color: theme.colors.onSurface, fontSize: labelFontSize }]}>
             Category
           </Text>
           <View style={styles.categories}>
@@ -265,7 +297,7 @@ export function CreateAgentScreen() {
             </HelperText>
           ) : null}
 
-          <Text style={[styles.label, { color: theme.colors.onSurfaceVariant, fontSize: errorFontSize }]} variant="bodySmall">
+          <Text style={[typographyStyles.bodySmall, { color: theme.colors.onSurfaceVariant }]}>
             Prompt Templates
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -284,8 +316,8 @@ export function CreateAgentScreen() {
             </View>
           </ScrollView>
 
-          <Text style={[styles.hint, { color: theme.colors.onSurfaceVariant, fontSize: errorFontSize }]} variant="bodySmall">
-            Be specific about the agent's role, expertise, and communication style
+          <Text style={[typographyStyles.bodySmall, { color: theme.colors.onSurfaceVariant }]}>
+            Be specific about the agent&apos;s role, expertise, and communication style
           </Text>
 
           <Button
@@ -331,6 +363,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
     fontWeight: '500',
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   categories: {
     flexDirection: 'row',

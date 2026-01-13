@@ -1,22 +1,60 @@
-i have setuped a react native expo project with react native paper v5 in it 
-now uour task is to build a plan to implement it phase by phase and in each phase commmit changes to github and push into the github 
-basically App is about 
-A multi Ai agent chatbot app 
-like writing assistant coding assistant image generator caption generator etc daily use ai agents that uses gemini-2.5-flash model for api based output and show this in markdown view also able to copy this and based on the task system prompt also be changed also a section to create custom agent for custom task 
+You are a senior UI/UX designer and React Native engineer inspired by Vercel’s design system.
 
-auth will be through using the clerk authentication google login only i'll provide you keys
+Goal:
+Redesign the entire React Native UI for a multi-agent chatbot to look and feel like a Vercel product.
 
-and for storage use firebase firestore i'll provide key its an android app
+Design Language (STRICT):
+- Minimal, calm, premium, and professional
+- Black / white / neutral gray palette
+- Subtle accent only (soft blue or purple, very limited)
+- No gradients unless extremely subtle
+- No heavy shadows, use thin borders and soft elevation
+- Large whitespace, perfect alignment
+- Rounded corners: 8px consistently
+- Typography similar to Inter / Geist (clean, modern, readable)
 
-so what we want :
-1. login screen using clerk
-2.after login , bottom navigation (home,explore,history,setting)
-3.in home, welcome screen with featured agent and other agents also a cta to create custome agent header having setting gear icon at right 
-4.in explore, all agent listed with search and filter option
-5.history, uses firebase for saving and retriving and use that for the chat based on agent.
-6.Profile page basic info and cta of setting and logout
-7.when user click on agent it will open a chat page with '+' icon for new chat at header right
-8.and a bottom input box should look modern and have send button and image upload button.
+Chatbot-Specific UI:
+- Clean chat screen with strong message hierarchy
+- User messages vs agent messages clearly distinguished (alignment + tone, not colors)
+- Multi-agent replies should feel organized and readable
+- Agent name / role shown subtly (small, muted text)
+- Smooth message grouping and spacing
+- Elegant loading / typing indicators (very subtle)
+- No bubbles that feel cartoonish
 
-use react native paper for componenet and everything 
-i want in dark and light ui with modern design
+Layout:
+- Minimal top bar with title + status
+- Chat area feels spacious and distraction-free
+- Input bar: flat, border-only, premium feel
+- Action buttons: ghost or minimal solid
+- Bottom-safe spacing for mobile devices
+
+Interactions:
+- Very subtle animations (opacity, small translateY)
+- Smooth keyboard handling
+- Soft press feedback
+- Fast, responsive feel
+
+UX Principles:
+- Reduce cognitive load
+- Everything feels intentional and fast
+- Mobile-first, thumb-friendly
+- Accessible contrast and readable text
+- Dark-mode first (Vercel-style dark)
+
+Technical Constraints:
+- React Native only (no web-only APIs)
+- Use existing navigation and logic
+- Do NOT change backend or agent logic
+- Refactor components only if needed for consistency
+- Clean, reusable components
+
+Deliverables:
+1. Revamped chat UI components
+2. Updated styles (StyleSheet / Tailwind-RN / NativeWind if used)
+3. Clean, production-ready code
+4. UI should look like a real Vercel-built mobile product
+
+Important:
+Do NOT ask questions.
+Make reasonable design decisions and execute confidently.

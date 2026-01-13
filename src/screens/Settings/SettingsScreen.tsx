@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
-  Text,
   useTheme,
   Surface,
   Switch,
@@ -13,7 +12,7 @@ import {
 } from 'react-native-paper';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import { useFontSize } from '../../hooks';
+import { useAppTheme, useFontSize } from '../../hooks';
 import { FONT_SIZE_LABELS } from '../../constants/agents';
 
 export function SettingsScreen() {
@@ -21,6 +20,7 @@ export function SettingsScreen() {
   const theme = useTheme();
   const { user, logout, isSignedIn } = useAuthStore();
   const { theme: themeSettings, setTheme } = useThemeStore();
+  const { typography } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   const handleLogout = () => {
@@ -66,23 +66,23 @@ export function SettingsScreen() {
               />
             )}
             <View style={styles.profileText}>
-              <Text style={{ color: theme.colors.onSurface }} variant="titleLarge">
+              <Text style={{ fontSize: typography.sizes.lg, fontFamily: typography.fontFamily.semibold, color: theme.colors.onSurface }}>
                 {user?.name || 'Guest User'}
               </Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodyMedium">
+              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
                 {user?.email || 'guest@example.com'}
               </Text>
             </View>
           </View>
         </Surface>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]} variant="labelLarge">
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: theme.colors.onSurfaceVariant }}>
           Appearance
         </Text>
 
         <Surface style={[styles.settingCard, { backgroundColor: theme.colors.surfaceVariant }]}>
           <View style={styles.settingRow}>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyLarge">
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
               Dark Mode
             </Text>
             <Switch
@@ -95,7 +95,7 @@ export function SettingsScreen() {
           <Divider style={styles.divider} />
 
           <View style={styles.settingRow}>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyLarge">
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
               Font Size
             </Text>
             <View style={styles.fontSizeControls}>
@@ -106,7 +106,7 @@ export function SettingsScreen() {
                 disabled={fontSize === 'small'}
                 iconColor={theme.colors.onSurface}
               />
-              <Text style={{ color: theme.colors.onSurface }} variant="bodyMedium">
+              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
                 {FONT_SIZE_LABELS[fontSize]}
               </Text>
               <IconButton
@@ -120,16 +120,16 @@ export function SettingsScreen() {
           </View>
         </Surface>
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]} variant="labelLarge">
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: theme.colors.onSurfaceVariant }}>
           Account
         </Text>
 
         <Surface style={[styles.settingCard, { backgroundColor: theme.colors.surfaceVariant }]}>
           <View style={styles.settingRow}>
-            <Text style={{ color: theme.colors.onSurface }} variant="bodyLarge">
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurface }}>
               Sync Data
             </Text>
-            <Text style={{ color: theme.colors.onSurfaceVariant }} variant="bodyMedium">
+            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
               Enabled
             </Text>
           </View>
@@ -147,7 +147,7 @@ export function SettingsScreen() {
           </Button>
         </View>
 
-        <Text style={[styles.version, { color: theme.colors.onSurfaceVariant }]} variant="bodySmall">
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.regular, color: theme.colors.onSurfaceVariant }}>
           June AI v1.0.0
         </Text>
       </View>
@@ -184,8 +184,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginTop: 8,
     marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   settingCard: {
     borderRadius: 16,

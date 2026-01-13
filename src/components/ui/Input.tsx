@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import { View, ViewStyle, TextInput as RNTextInput, TextInputProps as RNTextInputProps, TextStyle } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '../../hooks';
-import { COLORS, BORDER_RADIUS, TYPOGRAPHY } from '../../constants/theme';
+import { VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 
 interface InputProps extends Omit<RNTextInputProps, 'style'> {
   label?: string;
@@ -22,19 +22,17 @@ export const Input = forwardRef<RNTextInput, InputProps>(({
   fullWidth = false,
   ...textInputProps
 }, ref) => {
-  const { isDarkMode } = useAppTheme();
-
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const { colors, typography, borderRadius, spacing, layout } = useAppTheme();
 
   return (
     <View style={[{ width: fullWidth ? '100%' : undefined }, containerStyle]}>
       {label && (
         <Text
           style={{
-            fontSize: TYPOGRAPHY.sizes.sm,
-            fontFamily: TYPOGRAPHY.fontFamily.medium,
-            color: error ? colors.error : colors.secondary,
-            marginBottom: 8,
+            fontSize: typography.sizes.sm,
+            fontFamily: typography.fontFamily.medium,
+            color: error ? colors.error : colors.textSecondary,
+            marginBottom: spacing.xs,
           }}
         >
           {label}
@@ -45,7 +43,7 @@ export const Input = forwardRef<RNTextInput, InputProps>(({
         style={{
           borderWidth: 1,
           borderColor: error ? colors.error : colors.border,
-          borderRadius: BORDER_RADIUS.sm,
+          borderRadius: borderRadius.md,
           backgroundColor: colors.surface,
         }}
       >
@@ -53,16 +51,16 @@ export const Input = forwardRef<RNTextInput, InputProps>(({
           ref={ref}
           style={[
             {
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              fontSize: TYPOGRAPHY.sizes.base,
-              fontFamily: TYPOGRAPHY.fontFamily.regular,
-              color: colors.onSurface,
-              minHeight: 44,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.md,
+              fontSize: typography.sizes.base,
+              fontFamily: typography.fontFamily.regular,
+              color: colors.textPrimary,
+              minHeight: layout.components.inputHeight,
             },
             style,
           ]}
-          placeholderTextColor={colors.secondaryVariant}
+          placeholderTextColor={colors.textTertiary}
           selectionColor={colors.accent}
           {...textInputProps}
         />
@@ -71,10 +69,10 @@ export const Input = forwardRef<RNTextInput, InputProps>(({
       {(error || helperText) && (
         <Text
           style={{
-            fontSize: TYPOGRAPHY.sizes.xs,
-            fontFamily: TYPOGRAPHY.fontFamily.regular,
-            color: error ? colors.error : colors.secondaryVariant,
-            marginTop: 4,
+            fontSize: typography.sizes.xs,
+            fontFamily: typography.fontFamily.regular,
+            color: error ? colors.error : colors.textTertiary,
+            marginTop: spacing.xs,
           }}
         >
           {error || helperText}

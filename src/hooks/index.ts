@@ -6,38 +6,10 @@ import { useEffect, useState } from 'react';
 import { Appearance, ColorSchemeName, Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-export function useClerkAuth() {
-  const { setUser, setLoading, logout } = useAuthStore();
-  const [isSignedIn, setIsSignedIn] = useState(false);
 
-  const signIn = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Clerk sign-in logic will be implemented in the component
-      // This is a placeholder for the hook structure
-    } catch (error) {
-      console.error('Sign in error:', error);
-      setLoading(false);
-    }
-  }, [setLoading]);
-
-  const signOut = useCallback(async () => {
-    logout();
-    setIsSignedIn(false);
-  }, [logout]);
-
-  return {
-    signIn,
-    signOut,
-    isSignedIn,
-    setIsSignedIn,
-    setUser,
-    setLoading,
-  };
-}
 
 export function useAppTheme() {
-  const { theme, setTheme, initializeTheme } = useThemeStore();
+  const { theme, setTheme, initializeTheme, colors, typography, spacing, borderRadius, shadows, animation, layout } = useThemeStore();
   const [colorScheme, setColorScheme] = useState<ColorSchemeName>(Appearance.getColorScheme());
 
   useEffect(() => {
@@ -59,11 +31,24 @@ export function useAppTheme() {
     setTheme({ mode: theme.mode === 'dark' ? 'light' : 'dark' });
   }, [theme.mode, setTheme]);
 
+  // Get current theme colors based on mode
+  const getCurrentColors = () => {
+    return isDarkMode ? colors.dark : colors.light;
+  };
+
   return {
     isDarkMode,
     theme,
     setTheme,
     toggleTheme,
+    // Vercel theme system
+    colors: getCurrentColors(),
+    typography,
+    spacing,
+    borderRadius,
+    shadows,
+    animation,
+    layout,
   };
 }
 

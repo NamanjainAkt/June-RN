@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Text } from 'react-native-paper';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
 import { useAppTheme } from '../../hooks';
 import { ChatSession } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
-import { Card, Avatar, Button } from '../../components';
-import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
+import { Card, Avatar } from '../../components';
+import { VercelCard, VercelAvatar, VercelButton } from '../../components/vercel/VercelComponents';
+import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_BORDER_RADIUS } from '../../constants/vercel-theme';
 
 export function HistoryScreen() {
   const navigation = useNavigation<any>();
@@ -18,7 +18,7 @@ export function HistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const colors = isDarkMode ? COLORS.dark : COLORS.light;
+  const colors = getVercelColors(isDarkMode);
 
   useEffect(() => {
     if (user?.id) {
@@ -74,62 +74,60 @@ export function HistoryScreen() {
         disabled={isDeleting}
         activeOpacity={0.8}
       >
-        <Card variant="outlined" style={styles.sessionCard}>
+        <VercelCard variant="bordered" isDarkMode={isDarkMode} style={styles.sessionCard}>
           <View style={styles.sessionLeft}>
-            <Avatar name={item.agentName} size="lg" />
+            <VercelAvatar name={item.agentName} size="lg" isDarkMode={isDarkMode} />
           </View>
 
           <View style={styles.sessionInfo}>
             <View style={styles.sessionHeader}>
-              <Text style={[styles.sessionTitle, { color: colors.primary }]}>
+              <Text style={[styles.sessionTitle, { color: colors.textPrimary }]}>
                 {item.agentName}
               </Text>
-              <Text style={[styles.sessionTime, { color: colors.secondaryVariant }]}>
+              <Text style={[styles.sessionTime, { color: colors.textTertiary }]}>
                 {timeAgo}
               </Text>
             </View>
 
             <Text
-              style={[styles.sessionPreview, { color: colors.secondary }]}
+              style={[styles.sessionPreview, { color: colors.textSecondary }]}
               numberOfLines={2}
             >
               {preview}
             </Text>
 
             <View style={styles.sessionMeta}>
-              <Text style={[styles.messageCount, { color: colors.secondaryVariant }]}>
+              <Text style={[styles.messageCount, { color: colors.textTertiary }]}>
                 {item.messages.length} message{item.messages.length !== 1 ? 's' : ''}
               </Text>
             </View>
           </View>
 
-          <Button
-            variant="ghost"
-            size="sm"
+          <TouchableOpacity
             onPress={() => handleDeleteSession(item.id)}
             disabled={isDeleting}
             style={styles.deleteButton}
           >
             <Text style={{ color: colors.error, fontSize: 16 }}>🗑️</Text>
-          </Button>
-        </Card>
+          </TouchableOpacity>
+        </VercelCard>
       </TouchableOpacity>
     );
   }, [colors, handleSessionPress, handleDeleteSession, deletingId]);
 
   const keyExtractor = useCallback((item: ChatSession) => item.id, []);
 
-  return (
+return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.primary }]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
           Chat History
         </Text>
       </View>
 
       {isLoading && !refreshing ? (
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.secondary }]}>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
             Loading conversations...
           </Text>
         </View>
@@ -143,32 +141,24 @@ export function HistoryScreen() {
           onRefresh={handleRefresh}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={[styles.emptyIcon, { color: colors.secondaryVariant }]}>
+              <Text style={[styles.emptyIcon, { color: colors.textTertiary }]}>
                 📚
               </Text>
-              <Text style={[styles.emptyTitle, { color: colors.primary }]}>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                 No Chat History
               </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.secondary }]}>
+              <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
                 Start a conversation to see it here
               </Text>
-              <TouchableOpacity
-                style={[styles.exploreButton, { backgroundColor: colors.primary }]}
+              <VercelButton
+                variant="primary"
+                size="md"
                 onPress={() => navigation.navigate('Explore')}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.exploreButtonText, { color: colors.onPrimary }]}>
-                  Explore Agents
-                </Text>
-              </TouchableOpacity>
+                style={styles.startButton}
+                isDarkMode={isDarkMode}
+                text="Start Chatting"
+              />
             </View>
-          }
-          ListHeaderComponent={
-            sessions.length > 0 ? (
-              <Text style={[styles.resultsText, { color: colors.secondaryVariant }]}>
-                {sessions.length} conversation{sessions.length !== 1 ? 's' : ''}
-              </Text>
-            ) : null
           }
         />
       )}
@@ -182,12 +172,12 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 48,
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md,
+    paddingHorizontal: VERCEL_SPACING.lg,
+    paddingBottom: VERCEL_SPACING.md,
   },
   title: {
-    fontSize: TYPOGRAPHY.sizes['2xl'],
-    fontFamily: TYPOGRAPHY.fontFamily.bold,
+    fontSize: VERCEL_TYPOGRAPHY.sizes['2xl'],
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
   },
   loadingContainer: {
     flex: 1,
@@ -195,94 +185,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   sessionsList: {
-    padding: SPACING.lg,
-    paddingTop: SPACING.md,
-  },
-  resultsText: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
-    marginBottom: SPACING.sm,
+    padding: VERCEL_SPACING.lg,
+    flexGrow: 1,
   },
   sessionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-  },
-  deletingCard: {
-    opacity: 0.5,
+    padding: VERCEL_SPACING.md,
+    marginBottom: VERCEL_SPACING.sm,
+    gap: VERCEL_SPACING.md,
   },
   sessionLeft: {
-    marginRight: SPACING.md,
+    marginRight: VERCEL_SPACING.sm,
   },
   sessionInfo: {
     flex: 1,
+    gap: VERCEL_SPACING.xs,
   },
   sessionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.xs,
+    marginBottom: VERCEL_SPACING.xs,
   },
   sessionTitle: {
-    fontSize: TYPOGRAPHY.sizes.lg,
-    fontFamily: TYPOGRAPHY.fontFamily.semibold,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
+    flex: 1,
   },
   sessionTime: {
-    fontSize: TYPOGRAPHY.sizes.xs,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   sessionPreview: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
-    lineHeight: 20,
-    marginBottom: SPACING.sm,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.base,
+    marginBottom: VERCEL_SPACING.xs,
   },
   sessionMeta: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   messageCount: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   deleteButton: {
-    width: 40,
-    height: 40,
+    padding: VERCEL_SPACING.sm,
+    marginLeft: VERCEL_SPACING.sm,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: SPACING['3xl'],
+    padding: VERCEL_SPACING['3xl'],
     marginTop: 100,
   },
   emptyIcon: {
     fontSize: 64,
-    marginBottom: SPACING.md,
+    marginBottom: VERCEL_SPACING.lg,
   },
   emptyTitle: {
-    fontSize: TYPOGRAPHY.sizes.xl,
-    fontFamily: TYPOGRAPHY.fontFamily.bold,
-    marginBottom: SPACING.xs,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    marginBottom: VERCEL_SPACING.xs,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.regular,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     textAlign: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: VERCEL_SPACING.lg,
   },
-  exploreButton: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    borderRadius: 24,
+  startButton: {
+    marginTop: VERCEL_SPACING.md,
   },
   exploreButtonText: {
-    fontSize: TYPOGRAPHY.sizes.base,
-    fontFamily: TYPOGRAPHY.fontFamily.medium,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
 });
