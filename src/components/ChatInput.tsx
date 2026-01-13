@@ -12,7 +12,7 @@ import { Icon, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppTheme } from '../hooks';
 import { VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../constants/vercel-theme';
-import { Button } from './ui/Button';
+import { Button } from './index';
 
 interface ChatInputProps {
   value: string;
@@ -31,7 +31,7 @@ export function ChatInput({
   selectedImages,
   isLoading,
 }: ChatInputProps) {
-  const { colors, typography, borderRadius, spacing, layout } = useAppTheme();
+  const { colors, typography, borderRadius, spacing, layout, isDarkMode } = useAppTheme();
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -152,7 +152,8 @@ export function ChatInput({
         </View>
 
         <Button
-          variant={canSend ? 'solid' : 'outlined'}
+          isDarkMode={isDarkMode}
+          variant={canSend ? 'primary' : 'secondary'}
           size="md"
           onPress={onSend}
           disabled={!canSend}
