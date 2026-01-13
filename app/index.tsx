@@ -1,4 +1,3 @@
-import { StatusBar } from 'react-native';
 import App from '../App';
 
 export default function Index() {
