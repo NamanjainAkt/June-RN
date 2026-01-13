@@ -12,7 +12,7 @@ import { Icon, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { useAppTheme } from '../hooks';
 import { VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../constants/vercel-theme';
-import { Button } from './index';
+import { VercelButton } from './vercel/VercelComponents';
 
 interface ChatInputProps {
   value: string;
@@ -151,7 +151,7 @@ export function ChatInput({
           />
         </View>
 
-        <Button
+        <VercelButton
           isDarkMode={isDarkMode}
           variant={canSend ? 'primary' : 'secondary'}
           size="md"
@@ -164,7 +164,7 @@ export function ChatInput({
           ) : (
             <Icon source="send" size={layout.components.iconSize.sm} color={colors.textPrimary} />
           )}
-        </Button>
+        </VercelButton>
       </View>
     </View>
   );
