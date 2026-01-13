@@ -5,6 +5,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
 import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 import { Agent } from '../../types';
+import { VercelAgentCard } from './VercelComponents';
 
 // Vercel Home Header Component
 interface VercelHomeHeaderProps {
@@ -69,65 +70,7 @@ export const VercelHomeHeader: React.FC<VercelHomeHeaderProps> = ({
   );
 };
 
-// Vercel Agent Card Component
-interface VercelAgentCardProps {
-  isDarkMode: boolean;
-  agent: Agent;
-  onPress: (agent: Agent) => void;
-}
 
-export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
-  isDarkMode,
-  agent,
-  onPress,
-}) => {
-  const colors = getVercelColors(isDarkMode);
-  
-  return (
-    <TouchableOpacity
-      style={[
-        styles.agentCard,
-        {
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-        },
-      ]}
-      onPress={() => onPress(agent)}
-      activeOpacity={0.8}
-    >
-      {/* Agent Icon */}
-      <View style={[
-        styles.agentIcon,
-        { backgroundColor: colors.surfaceActive },
-      ]}>
-        <Text style={[styles.agentIconText, { color: colors.textPrimary }]}>
-          {agent.name.charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      
-      {/* Agent Info */}
-      <View style={styles.agentInfo}>
-        <Text style={[
-          styles.agentName,
-          { color: colors.textPrimary },
-        ]}>
-          {agent.name}
-        </Text>
-        <Text style={[
-          styles.agentDescription,
-          { color: colors.textSecondary },
-        ]}>
-          {agent.description}
-        </Text>
-      </View>
-      
-      {/* Arrow Indicator */}
-      <Text style={[styles.arrowIcon, { color: colors.textTertiary }]}>
-        →
-      </Text>
-    </TouchableOpacity>
-  );
-};
 
 // Vercel Quick Action Card Component
 interface VercelQuickActionCardProps {
@@ -426,44 +369,7 @@ const styles = StyleSheet.create({
     marginTop: VERCEL_SPACING.xs,
   },
   
-  // Agent Card
-  agentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: VERCEL_SPACING.md,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
-    borderWidth: 1,
-    gap: VERCEL_SPACING.md,
-    minWidth: 280,
-  },
-  agentIcon: {
-    width: VERCEL_LAYOUT.components.avatarSize.md,
-    height: VERCEL_LAYOUT.components.avatarSize.md,
-    borderRadius: VERCEL_BORDER_RADIUS.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  agentIconText: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
-  },
-  agentInfo: {
-    flex: 1,
-    gap: VERCEL_SPACING.xs,
-  },
-  agentName: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
-  },
-  agentDescription: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
-  },
-  arrowIcon: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
-    fontWeight: '600',
-  },
+
   
   // Featured Agents
   featuredAgentsContainer: {

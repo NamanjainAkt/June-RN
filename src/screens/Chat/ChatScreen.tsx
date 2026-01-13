@@ -69,23 +69,7 @@ export function ChatScreen() {
 
     if (agent) {
       navigation.setOptions({
-        headerTitle: () => (
-          <View style={styles.headerTitle}>
-            <VercelAvatar 
-              isDarkMode={isDarkMode} 
-              name={agent.name} 
-              size="md" 
-            />
-            <View style={styles.headerText}>
-              <Text style={[styles.headerName, { color: colors.textPrimary }]}>
-                {agent.name}
-              </Text>
-              <Text style={[styles.headerModel, { color: colors.textSecondary }]}>
-                Gemini 2.5 Flash Lite
-              </Text>
-            </View>
-          </View>
-        ),
+        headerTitle: agent.name,
         headerRight: () => (
           <TouchableOpacity
             onPress={() => {
@@ -192,9 +176,6 @@ export function ChatScreen() {
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
             {agent?.description}
           </Text>
-          <Text style={[styles.emptyModel, { color: colors.textTertiary }]}>
-            Powered by Gemini 2.5 Flash Lite
-          </Text>
         </View>
       ) : (
         <FlatList
@@ -257,21 +238,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerText: {
-    marginLeft: VERCEL_SPACING.md,
-  },
-  headerName: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
-  },
-  headerModel: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-  },
+
   newChatButton: {
     width: 40,
     height: 40,
@@ -303,11 +270,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: VERCEL_SPACING.md,
   },
-  emptyModel: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
-    textAlign: 'center',
-  },
+
   messagesList: {
     padding: VERCEL_SPACING.lg,
     paddingBottom: VERCEL_SPACING.md,

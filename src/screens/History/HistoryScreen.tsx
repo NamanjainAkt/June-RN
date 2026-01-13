@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 48,
+    paddingTop: '6%',
     paddingHorizontal: VERCEL_SPACING.lg,
     paddingBottom: VERCEL_SPACING.md,
   },

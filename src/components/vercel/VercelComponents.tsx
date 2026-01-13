@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
 import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT, VERCEL_ANIMATION } from '../../constants/vercel-theme';
+import { Agent } from '../../types';
 
 // Base Component Props
 interface BaseComponentProps {
@@ -323,6 +324,149 @@ export const VercelAvatar: React.FC<VercelAvatarProps> = ({
   );
 };
 
+// Vercel Badge Component
+interface VercelBadgeProps extends BaseComponentProps {
+  variant?: 'default' | 'primary' | 'success' | 'error' | 'warning';
+  size?: 'sm' | 'md' | 'lg';
+  text: string;
+}
+
+export const VercelBadge: React.FC<VercelBadgeProps> = ({
+  isDarkMode,
+  variant = 'default',
+  size = 'md',
+  text,
+  style,
+}) => {
+  const colors = getVercelColors(isDarkMode);
+  
+  const getVariantStyles = (): ViewStyle => {
+    switch (variant) {
+      case 'primary':
+        return {
+          backgroundColor: colors.accent,
+        };
+      case 'success':
+        return {
+          backgroundColor: colors.success || '#10b981',
+        };
+      case 'error':
+        return {
+          backgroundColor: colors.error,
+        };
+      case 'warning':
+        return {
+          backgroundColor: colors.warning || '#f59e0b',
+        };
+      default:
+        return {
+          backgroundColor: colors.surfaceActive,
+        };
+    }
+  };
+  
+  const getSizeStyles = (): ViewStyle & TextStyle => {
+    switch (size) {
+      case 'sm':
+        return {
+          paddingHorizontal: VERCEL_SPACING.sm,
+          paddingVertical: VERCEL_SPACING.xs,
+          fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+        };
+      case 'lg':
+        return {
+          paddingHorizontal: VERCEL_SPACING.lg,
+          paddingVertical: VERCEL_SPACING.md,
+          fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+        };
+      default:
+        return {
+          paddingHorizontal: VERCEL_SPACING.md,
+          paddingVertical: VERCEL_SPACING.xs,
+          fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+        };
+    }
+  };
+  
+  return (
+    <View
+      style={[
+        styles.badge,
+        getVariantStyles(),
+        getSizeStyles(),
+        style,
+      ]}
+    >
+      <Text
+        style={[
+          styles.badgeText,
+          {
+            color: colors.textPrimary,
+          },
+        ]}
+      >
+        {text}
+      </Text>
+    </View>
+  );
+};
+
+// Vercel Agent Card Component
+interface VercelAgentCardProps extends BaseComponentProps {
+  agent: Agent;
+  onPress: (agent: Agent) => void;
+}
+
+export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
+  isDarkMode,
+  agent,
+  onPress,
+  style,
+}) => {
+  const colors = getVercelColors(isDarkMode);
+  
+  return (
+    <TouchableOpacity
+      style={[
+        styles.agentCard,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
+        style,
+      ]}
+      onPress={() => onPress(agent)}
+      activeOpacity={0.8}
+    >
+      <View style={[
+        styles.agentIcon,
+        { backgroundColor: colors.surfaceActive },
+      ]}>
+        <Text style={[styles.agentIconText, { color: colors.textPrimary }]}>
+          {agent.name.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+      
+      <Text style={[
+        styles.agentName,
+        { color: colors.textPrimary },
+      ]}>
+        {agent.name}
+      </Text>
+      <Text style={[
+        styles.agentDescription,
+        { color: colors.textSecondary },
+      ]}>
+        {agent.description}
+      </Text>
+      
+      <Text style={[styles.arrowIcon, { color: colors.textTertiary }]}>
+        →
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 // Styles
 const styles = StyleSheet.create({
   // Button Styles
@@ -381,5 +525,52 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+  },
+  
+  // Badge Styles
+  badge: {
+    borderRadius: VERCEL_BORDER_RADIUS.sm,
+    alignSelf: 'flex-start',
+  },
+  badgeText: {
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+    textAlign: 'center',
+  },
+  
+  // Agent Card Styles
+  agentCard: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: VERCEL_SPACING.md,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
+    borderWidth: 1,
+    gap: VERCEL_SPACING.sm,
+    width: '100%',
+  },
+  agentIcon: {
+    width: VERCEL_LAYOUT.components.avatarSize.lg,
+    height: VERCEL_LAYOUT.components.avatarSize.lg,
+    borderRadius: VERCEL_BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  agentIconText: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+  },
+  agentName: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
+    textAlign: 'center',
+  },
+  agentDescription: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
+    textAlign: 'center',
+  },
+  arrowIcon: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontWeight: '600',
   },
 });

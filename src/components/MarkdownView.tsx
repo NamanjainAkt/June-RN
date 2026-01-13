@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Markdown from 'react-native-markdown-display';
+import Markdown from 'react-native-easy-markdown';
 import { Icon, TouchableRipple, Text } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 import { useDynamicFontSize, useAppTheme } from '../hooks';

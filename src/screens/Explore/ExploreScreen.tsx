@@ -1,15 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { AgentCard } from '../../components';
+
 import { VercelInput, VercelButton } from '../../components/vercel/VercelComponents';
-import { VercelAgentCard } from '../../components/vercel/VercelHomeComponents';
+import { VercelAgentCard } from '../../components/vercel/VercelComponents';
 import { useChatStore } from '../../store/useChatStore';
 import { useAppTheme } from '../../hooks';
 import { Agent, AgentCategory } from '../../types';
 import { CATEGORIES } from '../../constants/agents';
 import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT } from '../../constants/vercel-theme';
-import { Dimensions } from 'react-native';
 
 export function ExploreScreen() {
   const navigation = useNavigation<any>();
@@ -20,20 +19,8 @@ export function ExploreScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const colors = getVercelColors(isDarkMode);
-  const screenWidth = Dimensions.get('window').width;
-  
-  // Responsive grid configuration
-  const getResponsiveGrid = () => {
-    if (screenWidth >= VERCEL_LAYOUT.breakpoints.lg) {
-      return { numColumns: 3, cardWidth: (screenWidth - VERCEL_SPACING.xl * 2 - VERCEL_SPACING.md * 2) / 3 };
-    } else if (screenWidth >= VERCEL_LAYOUT.breakpoints.md) {
-      return { numColumns: 2, cardWidth: (screenWidth - VERCEL_SPACING.lg * 2 - VERCEL_SPACING.sm) / 2 };
-    } else {
-      return { numColumns: 2, cardWidth: (screenWidth - VERCEL_SPACING.md * 2 - VERCEL_SPACING.xs) / 2 };
-    }
-  };
 
-  const { numColumns } = getResponsiveGrid();
+  const numColumns = 2;
 
   const filteredAgents = useMemo(() => {
     return agents.filter((agent) => {
@@ -142,7 +129,7 @@ export function ExploreScreen() {
       <FlatList
         data={filteredAgents}
         renderItem={({ item }) => (
-          <View style={[styles.agentItem, { width: getResponsiveGrid().cardWidth }]}>
+          <View style={styles.agentItem}>
             <VercelAgentCard
               isDarkMode={isDarkMode}
               agent={item}
@@ -152,7 +139,7 @@ export function ExploreScreen() {
         )}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
-        columnWrapperStyle={numColumns === 3 ? styles.agentsGrid3 : styles.agentsGrid}
+        columnWrapperStyle={styles.agentsGrid}
         contentContainerStyle={styles.agentsList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -185,7 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 48,
+    paddingTop: '6%',
     paddingHorizontal: VERCEL_SPACING.lg,
     paddingBottom: VERCEL_SPACING.md,
   },
@@ -199,25 +186,25 @@ const styles = StyleSheet.create({
     marginBottom: VERCEL_SPACING.md,
   },
   searchInput: {
-    paddingRight: 50,
+    paddingRight: '10%',
   },
   clearButton: {
     position: 'absolute',
-    right: 12,
-    top: 12,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    right: '3%',
+    top: '3%',
+    width: '6%',
+    height: '6%',
+    borderRadius: '3%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchIcon: {
     position: 'absolute',
-    right: 12,
-    top: 12,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    right: '3%',
+    top: '3%',
+    width: '6%',
+    height: '6%',
+    borderRadius: '3%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -251,24 +238,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: VERCEL_SPACING.lg,
   },
-  agentsGrid3: {
-    justifyContent: 'space-between',
-    paddingHorizontal: VERCEL_SPACING.xl,
-  },
   agentsList: {
     paddingBottom: VERCEL_SPACING.xl,
     flexGrow: 1,
   },
   agentItem: {
     flex: 1,
-    margin: VERCEL_SPACING.xs,
+    margin: '1%',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: VERCEL_SPACING['3xl'],
-    marginTop: 100,
+    marginTop: '15%',
   },
   emptyIcon: {
     fontSize: 64,
