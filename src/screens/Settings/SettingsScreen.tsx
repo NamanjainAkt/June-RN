@@ -9,6 +9,7 @@ import {
   Divider,
   Button,
 } from 'react-native-paper';
+import { useAuth } from '@clerk/clerk-expo';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
 import { useAppTheme, useFontSize } from '../../hooks';
@@ -16,7 +17,8 @@ import { FONT_SIZE_LABELS } from '../../constants/agents';
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
-  const { user, logout, isSignedIn } = useAuthStore();
+  const { signOut } = useAuth();
+  const { user, logout } = useAuthStore();
   const { theme: themeSettings, setTheme } = useThemeStore();
   const { colors, typography } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
@@ -30,12 +32,18 @@ export function SettingsScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            logout();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
+          onPress: async () => {
+            try {
+              // Clear Clerk session first
+              await signOut();
+              // Clear Zustand store
+              logout();
+              // Navigation will automatically update based on auth state change
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Fallback: still try to clear store on error
+              logout();
+            }
           },
         },
       ]

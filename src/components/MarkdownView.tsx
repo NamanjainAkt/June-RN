@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Markdown from 'react-native-easy-markdown';
-import { Icon, TouchableRipple, Text } from 'react-native-paper';
+import { Icon, TouchableRipple } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 import { useDynamicFontSize, useAppTheme } from '../hooks';
 
@@ -27,63 +27,42 @@ export function MarkdownView({ content }: MarkdownViewProps) {
         <Icon source="content-copy" size={18} color={colors.textSecondary} />
       </TouchableRipple>
       <Markdown
-        style={{
-          body: {
-            color: colors.textPrimary,
-            fontSize: baseFontSize,
-          },
-          heading1: {
+        markdownStyles={{
+          h1: {
             color: colors.accent,
             fontSize: baseFontSize * 1.5,
             fontWeight: 'bold',
           },
-          heading2: {
+          h2: {
             color: colors.accent,
             fontSize: baseFontSize * 1.25,
             fontWeight: 'bold',
           },
-          heading3: {
+          h3: {
             color: colors.accent,
             fontSize: baseFontSize * 1.125,
             fontWeight: '600',
           },
-          heading4: {
+          h4: {
             color: colors.accent,
             fontSize: baseFontSize,
             fontWeight: '600',
           },
-          bullet_list: {
+          text: {
             color: colors.textPrimary,
             fontSize: baseFontSize,
           },
-          ordered_list: {
-            color: colors.textPrimary,
-            fontSize: baseFontSize,
-          },
-          blockquote: {
+          blockQuote: {
             backgroundColor: colors.surface,
             borderLeftColor: colors.accent,
+            borderLeftWidth: 4,
             paddingLeft: 12,
-          },
-          code_inline: {
-            backgroundColor: colors.surface,
-            color: colors.accent,
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            borderRadius: 4,
-            fontSize: baseFontSize * 0.875,
-          },
-          code_block: {
-            backgroundColor: colors.surface,
-            padding: 12,
-            borderRadius: 8,
-            fontFamily: 'monospace',
-            fontSize: baseFontSize * 0.875,
           },
           link: {
             color: colors.accent,
+            textDecorationLine: 'underline',
           },
-          paragraph: {
+          listItem: {
             color: colors.textPrimary,
             fontSize: baseFontSize,
           },

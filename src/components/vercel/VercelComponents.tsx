@@ -15,7 +15,7 @@ interface BaseComponentProps {
 
 // Vercel Button Component
 interface VercelButtonProps extends BaseComponentProps {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'solid' | 'outlined';
   size?: 'sm' | 'md' | 'lg';
   onPress: () => void;
   disabled?: boolean;
@@ -49,7 +49,18 @@ export const VercelButton: React.FC<VercelButtonProps> = ({
           backgroundColor: disabled ? colors.surfaceActive : colors.accent,
           borderWidth: 0,
         };
+      case 'solid':
+        return {
+          backgroundColor: disabled ? colors.surfaceActive : colors.accent,
+          borderWidth: 0,
+        };
       case 'secondary':
+        return {
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderColor: colors.border,
+        };
+      case 'outlined':
         return {
           backgroundColor: 'transparent',
           borderWidth: 1,

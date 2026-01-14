@@ -1,13 +1,14 @@
 import React, { useEffect, useCallback, useState } from 'react';
+import { View, Text } from 'react-native';
 import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
-import { NavigationIndependentTree } from '@react-navigation/native';
+import { NavigationIndependentTree, NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth, useOAuth, useClerk } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
-
+import { StatusBar } from 'expo-status-bar';
 import { useAppTheme } from './src/hooks';
 import { VERCEL_COLORS, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SHADOWS } from './src/constants/vercel-theme';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
@@ -18,6 +19,9 @@ import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
 import { ChatScreen } from './src/screens/Chat/ChatScreen';
 import { CreateAgentScreen } from './src/screens/CustomAgent/CreateAgentScreen';
 import { useAuthStore } from './src/store/useAuthStore';
+import { useChatStore } from './src/store/useChatStore';
+import { LoadingScreen } from './src/components/LoadingScreen';
+import * as Linking from 'expo-linking';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -79,9 +83,15 @@ function MainTabs() {
 }
 
 function RootNavigation() {
-  const { isSignedIn, setSignedIn, setUser, setLoading } = useAuthStore();
+  const { setSignedIn, setUser, setLoading } = useAuthStore();
   const { isLoaded, isSignedIn: clerkSignedIn, userId } = useAuth();
-  const { isDarkMode, colors } = useAppTheme();
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
+  const { signOut: clerkSignOut } = useClerk();
+  const { colors } = useAppTheme();
+  const loadSessions = useChatStore((state) => state.loadSessions);
+
+  // Debug: Log auth state
+  console.log('Auth State:', { isLoaded, clerkSignedIn, userId });
 
   useEffect(() => {
     if (isLoaded) {
@@ -93,21 +103,60 @@ function RootNavigation() {
           name: 'User',
         });
         setLoading(false);
+        loadSessions(userId);
       } else {
-        const storedState = useAuthStore.getState();
-        if (storedState.isSignedIn && storedState.user) {
-          setSignedIn(true);
-          setUser(storedState.user);
-        } else {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
-  }, [isLoaded, clerkSignedIn, userId]);
+  }, [isLoaded, clerkSignedIn, userId, setSignedIn, setUser, setLoading, loadSessions]);
 
   const handleGoogleLogin = useCallback(async () => {
-    setLoading(true);
-  }, [setLoading]);
+    try {
+      setLoading(true);
+      console.log('🔐 Starting Google OAuth flow...');
+
+      const { createdSessionId, setActive, signUp } = await startOAuthFlow({
+        redirectUrl: 'june://oauth-callback',
+      });
+
+      console.log('📱 OAuth result:', { createdSessionId, hasSetActive: !!setActive });
+
+      if (createdSessionId && setActive) {
+        console.log('✅ Setting active session:', createdSessionId);
+        await setActive({ session: createdSessionId });
+
+        // Wait a moment for Clerk to update auth state
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Update app state
+        setSignedIn(true);
+        setLoading(false);
+
+        // Use the latest user ID from Clerk after session is set
+        const { userId: newUserId } = useAuth();
+        if (newUserId) {
+          console.log('👤 User logged in:', newUserId);
+          setUser({
+            id: newUserId,
+            email: 'user@example.com',
+            name: 'User',
+          });
+          loadSessions(newUserId);
+        }
+      } else if (signUp) {
+        console.log('📝 Sign-up flow - user needs to complete signup');
+        // Handle sign-up flow if needed
+        setLoading(false);
+      } else {
+        console.warn('⚠️ No session created, user might have cancelled');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('❌ Google login error:', error);
+      console.error('Error details:', JSON.stringify(error));
+      setLoading(false);
+    }
+  }, [startOAuthFlow, setLoading, setSignedIn, setUser, userId, loadSessions, useAuth]);
 
   const handleDemoLogin = useCallback(() => {
     setLoading(true);
@@ -117,17 +166,36 @@ function RootNavigation() {
       email: 'demo@june.ai',
       name: 'Demo User',
     });
+    loadSessions('demo-user');
     setLoading(false);
-  }, [setSignedIn, setUser, setLoading]);
+  }, [setSignedIn, setUser, setLoading, loadSessions]);
 
-  const effectiveIsSignedIn = clerkSignedIn || isSignedIn;
-
-  if (!isLoaded) {
-    return null;
-  }
+  // Debug: Force logout for development
+  const handleForceLogout = useCallback(async () => {
+    try {
+      console.log('Force logout triggered');
+      await clerkSignOut();
+      setSignedIn(false);
+      setUser(null);
+      setLoading(false);
+      console.log('Force logout successful');
+    } catch (error) {
+      console.error('Force logout error:', error);
+    }
+  }, [clerkSignOut, setSignedIn, setUser, setLoading]);
 
   return (
     <NavigationIndependentTree>
+      {__DEV__ && (
+        <View style={{ position: 'absolute', top: 50, left: 10, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, borderRadius: 8 }}>
+          <Text style={{ color: 'white', fontSize: 10 }}>
+            Auth: {isLoaded ? (clerkSignedIn ? 'Signed In' : 'Not Signed In') : 'Loading...'}
+          </Text>
+          <Text style={{ color: 'white', fontSize: 10 }}>
+            User: {userId || 'None'}
+          </Text>
+        </View>
+      )}
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -135,7 +203,7 @@ function RootNavigation() {
           gestureEnabled: true,
         }}
       >
-        {effectiveIsSignedIn ? (
+        {clerkSignedIn ? (
           <>
             <Stack.Screen 
               name="Main" 
@@ -251,6 +319,34 @@ export default function App() {
     Inter_700Bold,
   });
 
+  // Configure deep linking for OAuth callbacks
+  const linking = {
+    prefixes: [Linking.createURL('/')],
+    config: {
+      screens: {
+        Login: 'login',
+      },
+    },
+  };
+
+  // Development: Expose force logout globally for debugging
+  (global as any).forceLogout = async () => {
+    try {
+      console.log('🔒 Force logout triggered');
+      const clerk = require('@clerk/clerk-expo').useClerk();
+      await clerk.useClerk().signOut?.();
+
+      const { setSignedIn, setUser, setLoading } = require('./src/store/useAuthStore').useAuthStore.getState();
+      setSignedIn(false);
+      setUser(null);
+      setLoading(false);
+
+      console.log('✅ Force logout successful');
+    } catch (error) {
+      console.error('❌ Force logout error:', error);
+    }
+  };
+
   const paperTheme = {
     colors: {
       ...(isDarkMode ? VERCEL_COLORS.dark : VERCEL_COLORS.light),
@@ -267,7 +363,7 @@ export default function App() {
   };
 
   if (!fontsLoaded) {
-    return null; // Show nothing while fonts load
+    return <LoadingScreen />;
   }
 
   return (
@@ -302,7 +398,9 @@ export default function App() {
         <StatusBar
           hidden={true}
         />
-        <RootNavigation />
+        <NavigationContainer linking={linking}>
+          <RootNavigation />
+        </NavigationContainer>
       </PaperProvider>
     </ClerkProvider>
   );

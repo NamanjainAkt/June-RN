@@ -1,60 +1,35 @@
-You are a senior UI/UX designer and React Native engineer inspired by Vercel’s design system.
+Yes! Clerk provides the useSSO() hook that uses expo-web-browser to handle OAuth authentication directly inside your Expo app.1
 
-Goal:
-Redesign the entire React Native UI for a multi-agent chatbot to look and feel like a Vercel product.
+Here's how to use it:
 
-Design Language (STRICT):
-- Minimal, calm, premium, and professional
-- Black / white / neutral gray palette
-- Subtle accent only (soft blue or purple, very limited)
-- No gradients unless extremely subtle
-- No heavy shadows, use thin borders and soft elevation
-- Large whitespace, perfect alignment
-- Rounded corners: 8px consistently
-- Typography similar to Inter / Geist (clean, modern, readable)
+Using useSSO() for in-app OAuth
+tsx
+import { useSSO } from '@clerk/clerk-expo'
+import { Button } from 'react-native'
 
-Chatbot-Specific UI:
-- Clean chat screen with strong message hierarchy
-- User messages vs agent messages clearly distinguished (alignment + tone, not colors)
-- Multi-agent replies should feel organized and readable
-- Agent name / role shown subtly (small, muted text)
-- Smooth message grouping and spacing
-- Elegant loading / typing indicators (very subtle)
-- No bubbles that feel cartoonish
+function GoogleSignInButton() {
+  const { startSSOFlow } = useSSO()
 
-Layout:
-- Minimal top bar with title + status
-- Chat area feels spacious and distraction-free
-- Input bar: flat, border-only, premium feel
-- Action buttons: ghost or minimal solid
-- Bottom-safe spacing for mobile devices
+  const onPress = async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: 'oauth_google'
+      })
 
-Interactions:
-- Very subtle animations (opacity, small translateY)
-- Smooth keyboard handling
-- Soft press feedback
-- Fast, responsive feel
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId })
+      }
+    } catch (err) {
+      console.error('OAuth error:', err)
+    }
+  }
 
-UX Principles:
-- Reduce cognitive load
-- Everything feels intentional and fast
-- Mobile-first, thumb-friendly
-- Accessible contrast and readable text
-- Dark-mode first (Vercel-style dark)
+  return <Button title="Sign in with Google" onPress={onPress} />
+}
+How it works
+The useSSO() hook handles the OAuth flow by:
 
-Technical Constraints:
-- React Native only (no web-only APIs)
-- Use existing navigation and logic
-- Do NOT change backend or agent logic
-- Refactor components only if needed for consistency
-- Clean, reusable components
-
-Deliverables:
-1. Revamped chat UI components
-2. Updated styles (StyleSheet / Tailwind-RN / NativeWind if used)
-3. Clean, production-ready code
-4. UI should look like a real Vercel-built mobile product
-
-Important:
-Do NOT ask questions.
-Make reasonable design decisions and execute confidently.
+Creating a redirect URL using AuthSession.makeRedirectUri() with the path 'sso-callback'
+Opening the OAuth provider's authentication page using WebBrowser.openAuthSessionAsync()
+Handling the callback with the authorization code
+Completing the sign-in or sign-up process automatically

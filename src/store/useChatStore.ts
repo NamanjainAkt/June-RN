@@ -5,6 +5,7 @@ import { Agent, ChatSession, Message } from '../types';
 import { PREDEFINED_AGENTS } from '../constants/agents';
 import { db } from '../services/firebase';
 import { collection, doc, setDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { useAuthStore } from './useAuthStore';
 
 interface ChatState {
   sessions: ChatSession[];
@@ -42,7 +43,10 @@ export const useChatStore = create<ChatState>()(
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
-        set({ currentSession: session });
+        set({
+          currentSession: session,
+          sessions: [...get().sessions, session],
+        });
         return session;
       },
 
@@ -64,6 +68,13 @@ export const useChatStore = create<ChatState>()(
               s.id === current.id ? updatedSession : s
             ),
           });
+          // Save to Firestore asynchronously (gracefully fails if Firebase not configured)
+          const userId = useAuthStore.getState().user?.id;
+          if (userId) {
+            get().saveSessions(userId).catch((error) => {
+              console.error('Error saving sessions:', error);
+            });
+          }
         }
       },
 

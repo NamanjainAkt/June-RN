@@ -12,7 +12,7 @@ interface LoginScreenProps {
 }
 
 export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScreenProps) {
-  const { colors, typography, spacing } = useAppTheme();
+  const { colors, typography, spacing, isDarkMode } = useAppTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -48,6 +48,7 @@ export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScre
             onPress={onGoogleLogin}
             style={styles.googleButton}
             fullWidth
+            isDarkMode={isDarkMode}
           >
             {isLoading ? 'Signing in...' : 'Continue with Google'}
           </Button>
@@ -70,6 +71,7 @@ export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScre
             onPress={onDemoLogin}
             style={styles.demoButton}
             fullWidth
+            isDarkMode={isDarkMode}
           >
             Try Demo Mode
           </Button>

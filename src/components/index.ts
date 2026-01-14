@@ -8,3 +8,4 @@ export { VercelAgentCard as AgentCard } from './vercel/VercelComponents';
 // Re-export existing components
 export { ChatInput } from './ChatInput';
 export { MarkdownView } from './MarkdownView';
+export { LoadingScreen } from './LoadingScreen';
