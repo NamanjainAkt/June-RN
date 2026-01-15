@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Keyboard, Text, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useChatStore } from '../../store/useChatStore';
-import { useAuthStore } from '../../store/useAuthStore';
-import { ChatInput, Avatar } from '../../components';
-import { VercelMessageBubble } from '../../components/vercel/VercelChatComponents';
-import { VercelAvatar, VercelButton } from '../../components/vercel/VercelComponents';
-import { generateResponse } from '../../services/gemini';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, FlatList, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ChatInput } from '../../components';
+import { VercelMessageBubble, VercelTypingIndicator } from '../../components/vercel/VercelChatComponents';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { useAppTheme } from '../../hooks';
+import { generateResponse } from '../../services/gemini';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useChatStore } from '../../store/useChatStore';
 import { Message } from '../../types';
-import * as ImagePicker from 'expo-image-picker';
-import { getVercelColors, VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../../constants/vercel-theme';
-import { Dimensions } from 'react-native';
 
 type ChatRouteParams = {
   agentId: string;
@@ -36,20 +33,68 @@ export function ChatScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<Array<{ uri: string; base64: string }>>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [messageStatuses, setMessageStatuses] = useState<Record<string, 'sending' | 'sent' | 'error'>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const colors = getVercelColors(isDarkMode);
   const agentId = route.params?.agentId;
   const sessionId = route.params?.sessionId;
   const agent = agents.find((a) => a.id === agentId);
-  
-  // Responsive configuration
+
+  // Responsive configuration using all breakpoints
   const screenWidth = Dimensions.get('window').width;
-  const isLargeScreen = screenWidth >= VERCEL_LAYOUT.breakpoints.lg;
-  
+
+  // Determine current breakpoint
+  const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md; // < 414
+  const isMd = screenWidth >= VERCEL_LAYOUT.breakpoints.md && screenWidth < VERCEL_LAYOUT.breakpoints.lg; // 414-767
+  const isLg = screenWidth >= VERCEL_LAYOUT.breakpoints.lg && screenWidth < VERCEL_LAYOUT.breakpoints.xl; // 768-1023
+  const isXl = screenWidth >= VERCEL_LAYOUT.breakpoints.xl; // >= 1024
+
+  // Dynamic spacing based on breakpoint (more spacing on larger screens)
   const getResponsivePadding = () => {
-    if (isLargeScreen) return VERCEL_SPACING.xl;
-    return VERCEL_SPACING.lg;
+    if (isSm) return VERCEL_SPACING.md;
+    if (isMd) return VERCEL_SPACING.lg;
+    if (isLg) return VERCEL_SPACING.xl;
+    return VERCEL_SPACING['2xl'];
+  };
+
+  // Dynamic container width for messages (wider on larger screens)
+  const getContainerWidth = () => {
+    if (isSm) return '75%';
+    if (isMd) return '80%';
+    if (isLg) return '85%';
+    return '90%';
+  };
+
+  // Responsive message list padding
+  const getMessagesPadding = () => {
+    if (isSm) return VERCEL_SPACING.sm;
+    if (isMd) return VERCEL_SPACING.md;
+    if (isLg) return VERCEL_SPACING.lg;
+    return VERCEL_SPACING.xl;
   };
 
   useEffect(() => {
@@ -93,13 +138,17 @@ export function ChatScreen() {
     if (!message.trim() && selectedImages.length === 0) return;
     if (!currentSession || !agent) return;
 
+    const userMessageId = `${Date.now()}-user`;
     const userMessage: Message = {
-      id: `${Date.now()}-user`,
+      id: userMessageId,
       role: 'user',
       content: message.trim(),
       timestamp: Date.now(),
       imageUrl: selectedImages.length > 0 ? selectedImages[0].base64 : undefined,
     };
+
+    // Set message status to sending
+    setMessageStatuses(prev => ({ ...prev, [userMessageId]: 'sending' }));
 
     addMessage(userMessage);
     setMessage('');
@@ -132,8 +181,15 @@ export function ChatScreen() {
       };
 
       addMessage(aiMessage);
+
+      // Mark user message as sent successfully
+      setMessageStatuses(prev => ({ ...prev, [userMessageId]: 'sent' }));
     } catch (error) {
       console.error('Error generating response:', error);
+
+      // Mark user message as failed
+      setMessageStatuses(prev => ({ ...prev, [userMessageId]: 'error' }));
+
       const errorMessage: Message = {
         id: `${Date.now()}-error`,
         role: 'assistant',
@@ -151,29 +207,52 @@ export function ChatScreen() {
     setSelectedImages(images);
   }, []);
 
+  const handleRetryMessage = useCallback((message: Message) => {
+    // Retry logic would involve re-sending the message
+    // For now, we can just clear the error status
+    setMessageStatuses(prev => {
+      const newStatuses = { ...prev };
+      delete newStatuses[message.id];
+      return newStatuses;
+    });
+
+    // Set the message content to the input and trigger send
+    setMessage(message.content);
+    // Note: Actual retry would require additional logic
+  }, []);
+
+  const handleDeleteMessage = useCallback((messageId: string) => {
+    // Remove message from store and clear its status
+    setMessageStatuses(prev => {
+      const newStatuses = { ...prev };
+      delete newStatuses[messageId];
+      return newStatuses;
+    });
+    // Note: Actual deletion would require additional logic in the store
+  }, []);
+
   const messages = currentSession?.messages || [];
 
+  // Improved auto-scroll without setTimeout
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      flatListRef.current?.scrollToEnd({ animated: true });
     }
-  }, [messages.length]);
+  }, [messages.length, messages]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceActive }]}>
-            <Text style={{ color: colors.textPrimary, fontSize: 48 }}>
+            <Text style={{ color: colors.textPrimary, fontSize: isXl ? 64 : isLg ? 56 : isMd ? 52 : 48 }}>
               {agent?.name?.charAt(0) || 'A'}
             </Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontSize: isXl ? VERCEL_TYPOGRAPHY.sizes['3xl'] : isLg ? VERCEL_TYPOGRAPHY.sizes['2xl'] : VERCEL_TYPOGRAPHY.sizes.xl }]}>
             Chat with {agent?.name}
           </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontSize: isSm ? VERCEL_TYPOGRAPHY.sizes.sm : VERCEL_TYPOGRAPHY.sizes.base }]}>
             {agent?.description}
           </Text>
         </View>
@@ -182,30 +261,35 @@ export function ChatScreen() {
           ref={flatListRef}
           data={messages}
           renderItem={({ item }) => (
-            <VercelMessageBubble 
-              message={item} 
+            <VercelMessageBubble
+              message={item}
               isDarkMode={isDarkMode}
               agentName={agent?.name}
               isUser={item.role === 'user'}
+              sendStatus={item.role === 'user' ? messageStatuses[item.id] : undefined}
+              onRetry={item.role === 'user' && messageStatuses[item.id] === 'error' ? handleRetryMessage : undefined}
+              onDelete={item.role === 'user' ? handleDeleteMessage : undefined}
+              containerWidth={getContainerWidth()}
+              breakpoint={{ isSm, isMd, isLg, isXl }}
             />
           )}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[styles.messagesList, {
+            padding: getMessagesPadding(),
+            paddingBottom: isSm ? VERCEL_SPACING.sm : VERCEL_SPACING.md,
+            maxWidth: isXl ? VERCEL_LAYOUT.breakpoints.xl : isLg ? VERCEL_LAYOUT.breakpoints.lg : '100%',
+          }]}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: true })
           }
           ListFooterComponent={
             isTyping ? (
-              <View style={styles.typingIndicator}>
-                <View style={[styles.typingBubble, { backgroundColor: colors.surfaceActive }]}>
-                  <View style={styles.typingDots}>
-                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
-                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
-                    <View style={[styles.dot, { backgroundColor: colors.textTertiary }]} />
-                  </View>
-                </View>
-              </View>
+              <VercelTypingIndicator
+                isDarkMode={isDarkMode}
+                agentName={agent?.name}
+                breakpoint={{ isSm, isMd, isLg, isXl }}
+              />
             ) : null
           }
         />
@@ -220,7 +304,17 @@ export function ChatScreen() {
         </View>
       )}
 
-      <View style={[styles.inputContainer, { backgroundColor: colors.surface }]}>
+
+      <View style={[
+        styles.inputContainer,
+        {
+          borderTopColor: colors.border,
+          paddingBottom: Platform.OS === 'ios' ? keyboardHeight : 0, // iOS handles its own avoidance usually, or we do manual
+          // For Android, we might need a different approach if windowSoftInputMode is 'adjustResize'
+          // But user asked for dynamic calculation. Let's apply it to a valid container.
+          marginBottom: Platform.OS === 'android' ? 0 : 0
+        }
+      ]}>
         <ChatInput
           value={message}
           onChangeText={setMessage}
@@ -229,6 +323,7 @@ export function ChatScreen() {
           selectedImages={selectedImages}
           isLoading={isLoading}
         />
+        {Platform.OS === 'android' && <View style={{ height: keyboardHeight }} />}
       </View>
     </View>
   );
@@ -238,7 +333,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   newChatButton: {
     width: 40,
     height: 40,
@@ -270,31 +364,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: VERCEL_SPACING.md,
   },
-
   messagesList: {
-    padding: VERCEL_SPACING.lg,
-    paddingBottom: VERCEL_SPACING.md,
-    maxWidth: VERCEL_LAYOUT.breakpoints.lg,
     alignSelf: 'center',
     width: '100%',
-  },
-  typingIndicator: {
-    paddingVertical: VERCEL_SPACING.sm,
-    paddingHorizontal: VERCEL_SPACING.lg,
-  },
-  typingBubble: {
-    padding: VERCEL_SPACING.md,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
-    alignSelf: 'flex-start',
-  },
-  typingDots: {
-    flexDirection: 'row',
-    gap: VERCEL_SPACING.xs,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: VERCEL_BORDER_RADIUS.full,
   },
   loadingIndicator: {
     flexDirection: 'row',
@@ -309,6 +381,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: 'rgba(0,0,0,0.05)', // Subtle border
+    backgroundColor: 'transparent',
   },
 });
+
+

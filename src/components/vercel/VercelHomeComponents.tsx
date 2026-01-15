@@ -2,8 +2,8 @@
 // Clean, Minimal, Professional Interface
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
-import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { Agent } from '../../types';
 import { VercelAgentCard } from './VercelComponents';
 
@@ -20,7 +20,7 @@ export const VercelHomeHeader: React.FC<VercelHomeHeaderProps> = ({
   onSettingsPress,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <View style={[
       styles.headerContainer,
@@ -55,7 +55,7 @@ export const VercelHomeHeader: React.FC<VercelHomeHeaderProps> = ({
             </Text>
           </View>
         </View>
-        
+
         {/* Settings Button */}
         <TouchableOpacity
           style={styles.settingsButton}
@@ -89,7 +89,7 @@ export const VercelQuickActionCard: React.FC<VercelQuickActionCardProps> = ({
   onPress,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <TouchableOpacity
       style={[
@@ -136,7 +136,7 @@ export const VercelSectionHeader: React.FC<VercelSectionHeaderProps> = ({
   subtitle,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <View style={styles.sectionHeader}>
       <Text style={[
@@ -170,7 +170,7 @@ export const VercelFeaturedAgents: React.FC<VercelFeaturedAgentsProps> = ({
   onAgentPress,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   const renderAgent = ({ item }: { item: Agent }) => (
     <View style={styles.agentCardWrapper}>
       <VercelAgentCard
@@ -180,7 +180,7 @@ export const VercelFeaturedAgents: React.FC<VercelFeaturedAgentsProps> = ({
       />
     </View>
   );
-  
+
   return (
     <View style={styles.featuredAgentsContainer}>
       <FlatList
@@ -239,7 +239,7 @@ export const VercelCreateAgentCTA: React.FC<VercelCreateAgentCTAProps> = ({
   onPress,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <TouchableOpacity
       style={[
@@ -267,7 +267,7 @@ export const VercelCreateAgentCTA: React.FC<VercelCreateAgentCTAProps> = ({
             Build custom AI agents tailored to your specific needs
           </Text>
         </View>
-        
+
         <View style={[
           styles.createAgentButton,
           { backgroundColor: colors.accent },
@@ -295,7 +295,7 @@ export const VercelFooter: React.FC<VercelFooterProps> = ({
   version,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <View style={styles.footer}>
       <Text style={[
@@ -345,8 +345,9 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   userName: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontSize: VERCEL_TYPOGRAPHY.sizes['2xl'],
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    letterSpacing: -0.5,
   },
   settingsButton: {
     padding: VERCEL_SPACING.sm,
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
   settingsIcon: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
   },
-  
+
   // Section Header
   sectionHeader: {
     marginBottom: VERCEL_SPACING.md,
@@ -368,9 +369,9 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     marginTop: VERCEL_SPACING.xs,
   },
-  
 
-  
+
+
   // Featured Agents
   featuredAgentsContainer: {
     marginBottom: VERCEL_SPACING.xl,
@@ -381,8 +382,9 @@ const styles = StyleSheet.create({
   },
   agentCardWrapper: {
     marginRight: VERCEL_SPACING.sm,
+    width: 200, // Fixed width for consistent card sizes
   },
-  
+
   // Quick Actions
   quickActionsGrid: {
     flexDirection: 'row',
@@ -395,11 +397,18 @@ const styles = StyleSheet.create({
     minWidth: '45%',
   },
   quickActionCard: {
-    padding: VERCEL_SPACING.md,
+    padding: VERCEL_SPACING.lg,
     borderRadius: VERCEL_BORDER_RADIUS.md,
     borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: VERCEL_SPACING.sm,
+    minHeight: 140, // Fixed minimum height for consistency
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   quickActionContent: {
     alignItems: 'center',
@@ -419,7 +428,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
   },
-  
+
   // Create Agent CTA
   createAgentCTA: {
     padding: VERCEL_SPACING.lg,
@@ -455,7 +464,7 @@ const styles = StyleSheet.create({
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
-  
+
   // Footer
   footer: {
     alignItems: 'center',

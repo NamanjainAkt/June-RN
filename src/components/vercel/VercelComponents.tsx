@@ -2,8 +2,8 @@
 // Clean, Minimal, Production-Ready Components
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';
-import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT, VERCEL_ANIMATION } from '../../constants/vercel-theme';
+import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { Agent } from '../../types';
 
 // Base Component Props
@@ -41,7 +41,7 @@ export const VercelButton: React.FC<VercelButtonProps> = ({
   children,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'primary':
@@ -80,7 +80,7 @@ export const VercelButton: React.FC<VercelButtonProps> = ({
         return {};
     }
   };
-  
+
   const getSizeStyles = (): ViewStyle => {
     const height = VERCEL_LAYOUT.components.buttonHeight[size];
     return {
@@ -88,19 +88,19 @@ export const VercelButton: React.FC<VercelButtonProps> = ({
       paddingHorizontal: size === 'sm' ? VERCEL_SPACING.md : VERCEL_SPACING.lg,
     };
   };
-  
+
   const getTextStyles = (): TextStyle => {
-    const color = variant === 'primary' || variant === 'danger' 
-      ? colors.textPrimary 
+    const color = variant === 'primary' || variant === 'danger'
+      ? colors.textPrimary
       : colors.textPrimary;
-    
+
     return {
       color: disabled ? colors.textTertiary : color,
       fontSize: VERCEL_TYPOGRAPHY.sizes[size === 'sm' ? 'sm' : 'base'],
       fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
     };
   };
-  
+
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -118,11 +118,11 @@ export const VercelButton: React.FC<VercelButtonProps> = ({
       activeOpacity={0.8}
     >
       {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
-      
+
       <Text style={getTextStyles()}>
         {loading ? 'Loading...' : (text || children)}
       </Text>
-      
+
       {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
     </TouchableOpacity>
   );
@@ -146,7 +146,7 @@ export const VercelCard: React.FC<VercelCardProps> = ({
   children,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'default':
@@ -166,16 +166,16 @@ export const VercelCard: React.FC<VercelCardProps> = ({
           backgroundColor: colors.surface,
           borderWidth: 0,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 3,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 4,
         };
       default:
         return {};
     }
   };
-  
+
   const getPadding = (): number => {
     switch (padding) {
       case 'xs': return VERCEL_SPACING.sm;
@@ -185,7 +185,7 @@ export const VercelCard: React.FC<VercelCardProps> = ({
       default: return VERCEL_SPACING.lg;
     }
   };
-  
+
   const CardComponent = (
     <View
       style={[
@@ -200,7 +200,7 @@ export const VercelCard: React.FC<VercelCardProps> = ({
       {children}
     </View>
   );
-  
+
   if (onPress || hoverable) {
     return (
       <TouchableOpacity
@@ -213,7 +213,7 @@ export const VercelCard: React.FC<VercelCardProps> = ({
       </TouchableOpacity>
     );
   }
-  
+
   return CardComponent;
 };
 
@@ -242,7 +242,7 @@ export const VercelInput: React.FC<VercelInputProps> = ({
   style,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   return (
     <View style={[styles.inputContainer, style]}>
       <View
@@ -257,7 +257,7 @@ export const VercelInput: React.FC<VercelInputProps> = ({
         ]}
       >
         {leftIcon && <View style={styles.inputIconLeft}>{leftIcon}</View>}
-        
+
         <Text
           style={[
             styles.input,
@@ -270,10 +270,10 @@ export const VercelInput: React.FC<VercelInputProps> = ({
         >
           {value || placeholder}
         </Text>
-        
+
         {rightIcon && <View style={styles.inputIconRight}>{rightIcon}</View>}
       </View>
-      
+
       {error && (
         <Text style={[styles.errorText, { color: colors.error }]}>
           Error message
@@ -301,7 +301,7 @@ export const VercelAvatar: React.FC<VercelAvatarProps> = ({
 }) => {
   const colors = getVercelColors(isDarkMode);
   const avatarSize = VERCEL_LAYOUT.components.avatarSize[size];
-  
+
   return (
     <View
       style={[
@@ -350,7 +350,7 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
   style,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+
   const getVariantStyles = (): ViewStyle => {
     switch (variant) {
       case 'primary':
@@ -359,7 +359,7 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
         };
       case 'success':
         return {
-          backgroundColor: colors.success || '#10b981',
+          backgroundColor: colors.success,
         };
       case 'error':
         return {
@@ -367,7 +367,7 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
         };
       case 'warning':
         return {
-          backgroundColor: colors.warning || '#f59e0b',
+          backgroundColor: colors.warning,
         };
       default:
         return {
@@ -375,7 +375,7 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
         };
     }
   };
-  
+
   const getSizeStyles = (): ViewStyle & TextStyle => {
     switch (size) {
       case 'sm':
@@ -398,7 +398,7 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
         };
     }
   };
-  
+
   return (
     <View
       style={[
@@ -428,6 +428,9 @@ interface VercelAgentCardProps extends BaseComponentProps {
   onPress: (agent: Agent) => void;
 }
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
 export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
   isDarkMode,
   agent,
@@ -435,45 +438,79 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
   style,
 }) => {
   const colors = getVercelColors(isDarkMode);
-  
+  const hasGradient = agent.gradientColors && agent.gradientColors.length >= 2;
+
+  const CardContent = (
+    <View style={styles.agentCardInner}>
+      {/* Left side: Icon + Name + Description */}
+      <View style={styles.agentCardLeft}>
+        <View style={[
+          styles.agentIconCompact,
+          { backgroundColor: hasGradient ? 'rgba(255,255,255,0.2)' : colors.surfaceActive },
+        ]}>
+          <Text style={[
+            styles.agentIconTextCompact,
+            { color: hasGradient ? '#FFFFFF' : colors.accent }
+          ]}>
+            {agent.name.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+
+        <View style={styles.agentCardContent}>
+          <Text style={[
+            styles.agentNameCompact,
+            { color: hasGradient ? '#FFFFFF' : colors.textPrimary },
+          ]}
+            numberOfLines={1}
+          >
+            {agent.name}
+          </Text>
+          <Text style={[
+            styles.agentDescriptionCompact,
+            { color: hasGradient ? 'rgba(255,255,255,0.8)' : colors.textSecondary },
+          ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {agent.description}
+          </Text>
+        </View>
+      </View>
+
+      {/* Right side: Arrow Icon */}
+      <MaterialCommunityIcons
+        name="chevron-right"
+        size={24}
+        color={hasGradient ? '#FFFFFF' : colors.textTertiary}
+      />
+    </View>
+  );
+
   return (
     <TouchableOpacity
       style={[
         styles.agentCard,
-        {
+        !hasGradient && {
           backgroundColor: colors.surface,
           borderColor: colors.border,
         },
         style,
       ]}
       onPress={() => onPress(agent)}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
-      <View style={[
-        styles.agentIcon,
-        { backgroundColor: colors.surfaceActive },
-      ]}>
-        <Text style={[styles.agentIconText, { color: colors.textPrimary }]}>
-          {agent.name.charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      
-      <Text style={[
-        styles.agentName,
-        { color: colors.textPrimary },
-      ]}>
-        {agent.name}
-      </Text>
-      <Text style={[
-        styles.agentDescription,
-        { color: colors.textSecondary },
-      ]}>
-        {agent.description}
-      </Text>
-      
-      <Text style={[styles.arrowIcon, { color: colors.textTertiary }]}>
-        →
-      </Text>
+      {hasGradient ? (
+        <LinearGradient
+          colors={agent.gradientColors!}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientContainer}
+        >
+          {CardContent}
+        </LinearGradient>
+      ) : (
+        CardContent
+      )}
     </TouchableOpacity>
   );
 };
@@ -494,7 +531,7 @@ const styles = StyleSheet.create({
   iconRight: {
     marginLeft: -VERCEL_SPACING.xs,
   },
-  
+
   // Card Styles
   card: {
     borderRadius: VERCEL_BORDER_RADIUS.md,
@@ -502,7 +539,7 @@ const styles = StyleSheet.create({
   cardTouchable: {
     borderRadius: VERCEL_BORDER_RADIUS.md,
   },
-  
+
   // Input Styles
   inputContainer: {
     gap: VERCEL_SPACING.xs,
@@ -527,7 +564,7 @@ const styles = StyleSheet.create({
     fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
-  
+
   // Avatar Styles
   avatar: {
     alignItems: 'center',
@@ -537,7 +574,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
-  
+
   // Badge Styles
   badge: {
     borderRadius: VERCEL_BORDER_RADIUS.sm,
@@ -547,41 +584,60 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
     textAlign: 'center',
   },
-  
-  // Agent Card Styles
+
+  // Agent Card Styles (Compact Horizontal)
   agentCard: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: VERCEL_SPACING.md,
     borderRadius: VERCEL_BORDER_RADIUS.md,
     borderWidth: 1,
-    gap: VERCEL_SPACING.sm,
     width: '100%',
+    overflow: 'hidden',
+    height: 80,
   },
-  agentIcon: {
-    width: VERCEL_LAYOUT.components.avatarSize.lg,
-    height: VERCEL_LAYOUT.components.avatarSize.lg,
+  gradientContainer: {
+    padding: VERCEL_SPACING.md,
+    width: '100%',
+    height: 80,
+    justifyContent: 'center',
+  },
+  agentCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: VERCEL_SPACING.md,
+    height: 80,
+  },
+  agentCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: VERCEL_SPACING.md,
+    flex: 1,
+  },
+  agentIconCompact: {
+    width: 48,
+    height: 48,
     borderRadius: VERCEL_BORDER_RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  agentIconText: {
+  agentIconTextCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
   },
-  agentName: {
+  agentCardContent: {
+    flex: 1,
+    gap: 2,
+  },
+  agentNameCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.base,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
-    textAlign: 'center',
   },
-  agentDescription: {
+  agentDescriptionCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.sm,
-    textAlign: 'center',
   },
-  arrowIcon: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+  arrowIconCompact: {
+    fontSize: 20,
     fontWeight: '600',
+    marginLeft: VERCEL_SPACING.sm,
   },
 });

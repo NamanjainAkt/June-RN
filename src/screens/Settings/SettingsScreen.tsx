@@ -1,19 +1,16 @@
-import React from 'react';
-import { View, StyleSheet, Text, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import {
-  Surface,
-  Switch,
-  IconButton,
-  Avatar,
-  Divider,
-  Button,
-} from 'react-native-paper';
 import { useAuth } from '@clerk/clerk-expo';
+import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
+import {
+  Switch
+} from 'react-native-paper';
+import { VercelAvatar, VercelButton, VercelCard } from '../../components/vercel/VercelComponents';
+import { MOBILE_SPACING } from '../../constants/mobile-design-tokens';
+import { VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
+import { useAppTheme, useFontSize } from '../../hooks';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
-import { useAppTheme, useFontSize } from '../../hooks';
-import { FONT_SIZE_LABELS } from '../../constants/agents';
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
@@ -22,6 +19,36 @@ export function SettingsScreen() {
   const { theme: themeSettings, setTheme } = useThemeStore();
   const { colors, typography } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
+
+  // Responsive configuration using all breakpoints
+  const screenWidth = Dimensions.get('window').width;
+  const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md;
+  const isMd = screenWidth >= VERCEL_LAYOUT.breakpoints.md && screenWidth < VERCEL_LAYOUT.breakpoints.lg;
+  const isLg = screenWidth >= VERCEL_LAYOUT.breakpoints.lg && screenWidth < VERCEL_LAYOUT.breakpoints.xl;
+  const isXl = screenWidth >= VERCEL_LAYOUT.breakpoints.xl;
+
+  // Dynamic avatar size
+  const getAvatarSize = () => {
+    if (isXl) return 80;
+    if (isLg) return 72;
+    if (isMd) return 68;
+    return 64;
+  };
+
+  // Responsive padding
+  const getContentPadding = () => {
+    if (isSm) return VERCEL_SPACING.md;
+    if (isMd) return VERCEL_SPACING.lg;
+    if (isLg) return VERCEL_SPACING.xl;
+    return VERCEL_SPACING['2xl'];
+  };
+
+  // Dynamic font sizes
+  const getTitleSize = () => {
+    if (isXl) return VERCEL_TYPOGRAPHY.sizes.xl;
+    if (isLg) return VERCEL_TYPOGRAPHY.sizes.lg;
+    return VERCEL_TYPOGRAPHY.sizes.base;
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -58,35 +85,31 @@ export function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <Surface style={[styles.profileCard, { backgroundColor: colors.surface }]}>
+      <View style={[styles.content, { padding: getContentPadding() }]}>
+        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.profileCard} variant='elevated'>
           <View style={styles.profileInfo}>
-            {user?.imageUrl ? (
-              <Avatar.Image source={{ uri: user.imageUrl }} size={64} />
-            ) : (
-              <Avatar.Text
-                size={64}
-                label={user?.name?.charAt(0) || 'G'}
-                style={{ backgroundColor: colors.surfaceActive }}
-                labelStyle={{ color: colors.accent }}
-              />
-            )}
+            <VercelAvatar
+              name={user?.name || 'Guest'}
+              imageUrl={user?.imageUrl}
+              size="lg"
+              isDarkMode={themeSettings.mode === 'dark'}
+            />
             <View style={styles.profileText}>
-              <Text style={{ fontSize: typography.sizes.lg, fontFamily: typography.fontFamily.semibold, color: colors.textPrimary }}>
+              <Text style={{ fontSize: getTitleSize(), fontFamily: typography.fontFamily.bold, color: colors.textPrimary }}>
                 {user?.name || 'Guest User'}
               </Text>
-              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
+              <Text style={{ fontSize: isSm ? typography.sizes.sm : typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
                 {user?.email || 'guest@example.com'}
               </Text>
             </View>
           </View>
-        </Surface>
+        </VercelCard>
 
         <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary }}>
           Appearance
         </Text>
 
-        <Surface style={[styles.settingCard, { backgroundColor: colors.surface }]}>
+        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
           <View style={styles.settingRow}>
             <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
               Dark Mode
@@ -97,60 +120,23 @@ export function SettingsScreen() {
               color={colors.accent}
             />
           </View>
+        </VercelCard>
 
-          <Divider style={styles.divider} />
-
-          <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
-              Font Size
-            </Text>
-            <View style={styles.fontSizeControls}>
-              <IconButton
-                icon="minus"
-                size={20}
-                onPress={decreaseFontSize}
-                disabled={fontSize === 'small'}
-                iconColor={colors.textPrimary}
-              />
-              <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
-                {FONT_SIZE_LABELS[fontSize]}
-              </Text>
-              <IconButton
-                icon="plus"
-                size={20}
-                onPress={increaseFontSize}
-                disabled={fontSize === 'xlarge'}
-                iconColor={colors.textPrimary}
-              />
-            </View>
-          </View>
-        </Surface>
-
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary }}>
+        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary, marginTop: MOBILE_SPACING.md }}>
           Account
         </Text>
 
-        <Surface style={[styles.settingCard, { backgroundColor: colors.surface }]}>
-          <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
-              Sync Data
-            </Text>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
-              Enabled
-            </Text>
-          </View>
-        </Surface>
+
 
         <View style={styles.logoutContainer}>
-          <Button
-            mode="outlined"
+          <VercelButton
+            variant="danger"
+            size="lg"
             onPress={handleLogout}
-            icon="logout"
-            style={styles.logoutButton}
-            textColor={colors.error}
-          >
-            Log Out
-          </Button>
+            text="Log Out"
+            isDarkMode={themeSettings.mode === 'dark'}
+            fullWidth
+          />
         </View>
 
         <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>

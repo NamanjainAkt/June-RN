@@ -1,22 +1,23 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
+import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
+  Button,
+  Chip,
+  HelperText,
+  IconButton,
   Surface,
   TextInput,
-  Button,
-  IconButton,
-  HelperText,
-  Chip,
 } from 'react-native-paper';
-import { useChatStore } from '../../store/useChatStore';
-import { useAuthStore } from '../../store/useAuthStore';
-import { Agent, AgentCategory } from '../../types';
+import { VercelAgentCard } from '../../components/vercel/VercelComponents';
 import { CATEGORIES } from '../../constants/agents';
-import { db } from '../../services/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { useDynamicFontSize, useAppTheme } from '../../hooks';
+import { GRADIENT_PRESETS } from '../../constants/mobile-design-tokens';
 import { VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
+import { useAppTheme, useDynamicFontSize } from '../../hooks';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useChatStore } from '../../store/useChatStore';
+import { Agent, AgentCategory } from '../../types';
 
 const PROMPT_TEMPLATES = [
   {
@@ -71,7 +72,7 @@ const typographyStyles = {
 
 export function CreateAgentScreen() {
   const navigation = useNavigation<any>();
-  const { colors } = useAppTheme();
+  const { colors, isDarkMode } = useAppTheme();
   const { user } = useAuthStore();
   const { addCustomAgent } = useChatStore();
 
@@ -79,6 +80,7 @@ export function CreateAgentScreen() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<AgentCategory>('custom');
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [selectedGradient, setSelectedGradient] = useState<string[]>(GRADIENT_PRESETS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -139,13 +141,10 @@ export function CreateAgentScreen() {
         systemPrompt: systemPrompt.trim(),
         isCustom: true,
         createdAt: Date.now(),
+        gradientColors: selectedGradient,
       };
 
-      addCustomAgent(newAgent);
-
-      if (db) {
-        await setDoc(doc(db, 'users', user.id, 'customAgents', newAgent.id), newAgent);
-      }
+      await addCustomAgent(newAgent);
 
       Alert.alert('Success', 'Your custom agent has been created!', [
         {
@@ -197,6 +196,54 @@ export function CreateAgentScreen() {
         </Text>
 
         <View style={styles.form}>
+          {/* Live Preview */}
+          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
+            Agent Preview
+          </Text>
+          <View style={styles.previewContainer}>
+            <VercelAgentCard
+              isDarkMode={isDarkMode}
+              agent={{
+                id: 'preview',
+                name: name || 'Agent Name',
+                description: description || 'Agent Description',
+                category: 'custom',
+                icon: 'star',
+                systemPrompt: '',
+                gradientColors: selectedGradient
+              }}
+              onPress={() => { }}
+            />
+          </View>
+
+          {/* Gradient Selector */}
+          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
+            Background Style
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.gradientList}
+          >
+            {GRADIENT_PRESETS.map((grad, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setSelectedGradient(grad)}
+                style={[
+                  styles.gradientOption,
+                  selectedGradient === grad && { borderColor: colors.accent, borderWidth: 2 }
+                ]}
+              >
+                <LinearGradient
+                  colors={grad}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.gradientCircle}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
           <TextInput
             label="Agent Name"
             value={name}
@@ -354,6 +401,26 @@ const styles = StyleSheet.create({
   },
   form: {
     marginTop: 16,
+  },
+  previewContainer: {
+    marginBottom: 16,
+  },
+  gradientList: {
+    paddingVertical: 8,
+    gap: 12,
+    marginBottom: 16,
+  },
+  gradientOption: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    padding: 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  gradientCircle: {
+    flex: 1,
+    borderRadius: 22,
   },
   input: {
     marginBottom: 4,

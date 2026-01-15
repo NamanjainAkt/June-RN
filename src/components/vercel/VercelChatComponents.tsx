@@ -1,10 +1,12 @@
 // Vercel-Style Chat Components
 // Clean, Professional Chat Interface
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Dimensions, TextInput as RNTextInput, Animated, Clipboard } from 'react-native';
+import { MarkdownView } from '../MarkdownView';
+import { VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_LAYOUT } from '../../constants/vercel-theme';
 import { Message } from '../../types';
+import { useAppTheme } from '../../hooks';
 
 // Vercel Message Bubble Component
 interface VercelMessageBubbleProps {
@@ -12,6 +14,16 @@ interface VercelMessageBubbleProps {
   isDarkMode: boolean;
   agentName?: string;
   isUser?: boolean;
+  onRetry?: (message: Message) => void;
+  onDelete?: (messageId: string) => void;
+  sendStatus?: 'sending' | 'sent' | 'error';
+  containerWidth?: `${number}%`;
+  breakpoint?: {
+    isSm: boolean;
+    isMd: boolean;
+    isLg: boolean;
+    isXl: boolean;
+  };
 }
 
 export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
@@ -19,24 +31,156 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
   isDarkMode,
   agentName,
   isUser = false,
+  onRetry,
+  onDelete,
+  sendStatus,
+  containerWidth = '75%',
+  breakpoint = { isSm: false, isMd: false, isLg: false, isXl: false },
 }) => {
-  const colors = getVercelColors(isDarkMode);
+  const { colors } = useAppTheme();
+  const { width } = Dimensions.get('window');
+  const { isSm, isMd, isLg, isXl } = breakpoint;
   
+  // Dynamic avatar sizing across breakpoints
+  const getAvatarSize = () => {
+    if (isXl) return VERCEL_LAYOUT.components.avatarSize.xl;
+    if (isLg) return VERCEL_LAYOUT.components.avatarSize.lg;
+    if (isMd) return VERCEL_LAYOUT.components.avatarSize.md;
+    return VERCEL_LAYOUT.components.avatarSize.sm;
+  };
+  
+  const avatarSize = getAvatarSize();
+  
+  // Responsive message bubble width
+  const getMessageWidth = (): `${number}%` => {
+    if (isXl) return '90%';
+    if (isLg) return '85%';
+    if (isMd) return '80%';
+    return '75%';
+  };
+  
+  const messageWidth = containerWidth || getMessageWidth();
+  
+  // Responsive font sizing
+  const getAvatarFontSize = () => {
+    if (isXl) return VERCEL_TYPOGRAPHY.sizes.lg;
+    if (isLg) return VERCEL_TYPOGRAPHY.sizes.base;
+    if (isMd) return VERCEL_TYPOGRAPHY.sizes.sm;
+    return VERCEL_TYPOGRAPHY.sizes.xs;
+  };
+  
+  const [showActions, setShowActions] = useState(false);
+  const actionButtonsOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(actionButtonsOpacity, {
+      toValue: showActions ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [showActions]);
+
+  const handleCopy = () => {
+    Clipboard.setString(message.content);
+    setShowActions(false);
+  };
+
+  const handleRetry = () => {
+    if (onRetry) {
+      onRetry(message);
+      setShowActions(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(message.id);
+      setShowActions(false);
+    }
+  };
+
+  const toggleActions = () => {
+    setShowActions(!showActions);
+  };
+
+  const renderStatusIndicator = () => {
+    switch (sendStatus) {
+      case 'sending':
+        return (
+          <View style={styles.statusIndicator}>
+            <View style={[styles.sendingDot, { backgroundColor: colors.textTertiary }]} />
+            <View style={[styles.sendingDot, { backgroundColor: colors.textTertiary }]} />
+            <View style={[styles.sendingDot, { backgroundColor: colors.textTertiary }]} />
+          </View>
+        );
+      case 'sent':
+        return (
+          <View style={styles.statusIndicator}>
+            <Text style={[styles.statusIcon, { color: colors.accent }]}>✓</Text>
+          </View>
+        );
+      case 'error':
+        return (
+          <View style={styles.statusIndicator}>
+            <Text style={[styles.statusIcon, { color: colors.error }]}>⚠</Text>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <View style={[
-      styles.messageContainer,
-      isUser ? styles.userMessage : styles.assistantMessage,
-    ]}>
+    <TouchableOpacity 
+      style={[
+        styles.messageContainer,
+        isUser ? styles.userMessage : styles.assistantMessage,
+      ]}
+      onLongPress={toggleActions}
+      activeOpacity={0.8}
+    >
+      {/* Action Buttons */}
+      {isUser && (
+        <Animated.View style={[
+          styles.actionButtonsContainer,
+          { 
+            opacity: actionButtonsOpacity,
+            backgroundColor: colors.surface,
+            shadowColor: colors.textPrimary,
+          },
+        ]}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleCopy}>
+            <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>📋</Text>
+          </TouchableOpacity>
+          {sendStatus === 'error' && onRetry && (
+            <TouchableOpacity style={styles.actionButton} onPress={handleRetry}>
+              <Text style={[styles.actionIcon, { color: colors.textSecondary }]}>🔄</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+            <Text style={[styles.actionIcon, { color: colors.error }]}>🗑</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+      
       {/* Avatar */}
       {!isUser && (
         <View style={styles.avatarContainer}>
           <View style={[
             styles.avatar,
-            { backgroundColor: colors.surfaceActive },
+            { 
+              backgroundColor: colors.surfaceActive,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: avatarSize / 2,
+            },
           ]}>
             <Text style={[
               styles.avatarText,
-              { color: colors.textPrimary },
+              { 
+                color: colors.textPrimary,
+                fontSize: getAvatarFontSize(),
+              },
             ]}>
               {agentName?.charAt(0) || 'AI'}
             </Text>
@@ -51,6 +195,7 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
           backgroundColor: isUser ? colors.accent : colors.surface,
           borderWidth: isUser ? 0 : 1,
           borderColor: colors.border,
+          maxWidth: messageWidth,
         },
       ]}>
         {/* Agent Name (for assistant messages) */}
@@ -64,27 +209,34 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
         )}
         
         {/* Message Text */}
-        <Text style={[
-          styles.messageText,
-          {
-            color: isUser ? colors.textPrimary : colors.textPrimary,
-          },
-        ]}>
-          {message.content}
-        </Text>
+        {!isUser ? (
+          <MarkdownView content={message.content} />
+        ) : (
+          <Text style={[
+            styles.messageText,
+            {
+              color: colors.textPrimary,
+            },
+          ]}>
+            {message.content}
+          </Text>
+        )}
         
-        {/* Timestamp */}
-        <Text style={[
-          styles.timestamp,
-          {
-            color: isUser ? colors.textSecondary : colors.textTertiary,
-          },
-        ]}>
-          {new Date(message.timestamp).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </Text>
+        {/* Message Footer with Timestamp and Status */}
+        <View style={styles.messageFooter}>
+          <Text style={[
+            styles.timestamp,
+            {
+              color: isUser ? colors.textSecondary : colors.textTertiary,
+            },
+          ]}>
+            {new Date(message.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+          {renderStatusIndicator()}
+        </View>
       </View>
       
       {/* User Avatar (right-aligned) */}
@@ -92,18 +244,26 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
         <View style={styles.avatarContainer}>
           <View style={[
             styles.avatar,
-            { backgroundColor: colors.surfaceActive },
+            { 
+              backgroundColor: colors.surfaceActive,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: avatarSize / 2,
+            },
           ]}>
             <Text style={[
               styles.avatarText,
-              { color: colors.textPrimary },
+              { 
+                color: colors.textPrimary,
+                fontSize: getAvatarFontSize(),
+              },
             ]}>
               Y
             </Text>
           </View>
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -127,7 +287,17 @@ export const VercelChatInput: React.FC<VercelChatInputProps> = ({
   isLoading = false,
   placeholder = "Ask anything...",
 }) => {
-  const colors = getVercelColors(isDarkMode);
+  const { colors } = useAppTheme();
+  const textInputRef = React.useRef<RNTextInput>(null);
+  const [inputHeight, setInputHeight] = React.useState(VERCEL_LAYOUT.components.inputHeight - VERCEL_SPACING.xs * 2);
+  
+  const handleContentSizeChange = (event: any) => {
+    const { height } = event.nativeEvent.contentSize;
+    const minHeight = VERCEL_LAYOUT.components.inputHeight - VERCEL_SPACING.xs * 2;
+    const maxHeight = VERCEL_LAYOUT.components.inputHeight * 3; // Max 3 lines
+    const newHeight = Math.max(minHeight, Math.min(height, maxHeight));
+    setInputHeight(newHeight);
+  };
   
   return (
     <View style={[
@@ -157,16 +327,23 @@ export const VercelChatInput: React.FC<VercelChatInputProps> = ({
         </TouchableOpacity>
         
         {/* Text Input */}
-        <Text
+        <RNTextInput
+          ref={textInputRef}
           style={[
             styles.textInput,
             {
               color: colors.textPrimary,
+              height: inputHeight,
             },
           ]}
-        >
-          {value || placeholder}
-        </Text>
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textTertiary}
+          multiline={true}
+          onContentSizeChange={handleContentSizeChange}
+          textAlignVertical="top"
+        />
         
         {/* Send Button */}
         <TouchableOpacity
@@ -203,25 +380,54 @@ export const VercelChatInput: React.FC<VercelChatInputProps> = ({
 interface VercelTypingIndicatorProps {
   isDarkMode: boolean;
   agentName?: string;
+  breakpoint?: {
+    isSm: boolean;
+    isMd: boolean;
+    isLg: boolean;
+    isXl: boolean;
+  };
 }
 
 export const VercelTypingIndicator: React.FC<VercelTypingIndicatorProps> = ({
   isDarkMode,
   agentName,
+  breakpoint = { isSm: false, isMd: false, isLg: false, isXl: false },
 }) => {
-  const colors = getVercelColors(isDarkMode);
+  const { colors } = useAppTheme();
+  const { isSm, isMd, isLg, isXl } = breakpoint;
+  
+  // Dynamic avatar sizing across breakpoints
+  const getAvatarSize = () => {
+    if (isXl) return VERCEL_LAYOUT.components.avatarSize.xl;
+    if (isLg) return VERCEL_LAYOUT.components.avatarSize.lg;
+    if (isMd) return VERCEL_LAYOUT.components.avatarSize.md;
+    return VERCEL_LAYOUT.components.avatarSize.sm;
+  };
+  
+  const avatarSize = getAvatarSize();
+  
+  // Responsive font sizing
+  const getAvatarFontSize = () => {
+    if (isXl) return VERCEL_TYPOGRAPHY.sizes.lg;
+    if (isLg) return VERCEL_TYPOGRAPHY.sizes.base;
+    if (isMd) return VERCEL_TYPOGRAPHY.sizes.sm;
+    return VERCEL_TYPOGRAPHY.sizes.xs;
+  };
   
   return (
     <View style={styles.typingContainer}>
       {/* Avatar */}
       <View style={styles.avatarContainer}>
-        <View style={[
-          styles.avatar,
-          { backgroundColor: colors.surfaceActive },
-        ]}>
+          <View style={[
+            styles.avatar,
+            { backgroundColor: colors.surfaceActive, width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
+          ]}>
           <Text style={[
             styles.avatarText,
-            { color: colors.textPrimary },
+            { 
+              color: colors.textPrimary,
+              fontSize: getAvatarFontSize(),
+            },
           ]}>
             {agentName?.charAt(0) || 'AI'}
           </Text>
@@ -279,7 +485,7 @@ export const VercelChatHeader: React.FC<VercelChatHeaderProps> = ({
   onBack,
   onNewChat,
 }) => {
-  const colors = getVercelColors(isDarkMode);
+  const { colors } = useAppTheme();
   
   return (
     <View style={[
@@ -334,7 +540,7 @@ export const VercelEmptyState: React.FC<VercelEmptyStateProps> = ({
   agentName,
   agentDescription,
 }) => {
-  const colors = getVercelColors(isDarkMode);
+  const { colors } = useAppTheme();
   
   return (
     <View style={[
@@ -385,6 +591,29 @@ export const VercelEmptyState: React.FC<VercelEmptyStateProps> = ({
   );
 };
 
+// Helper function to create theme-aware styles
+const createThemeAwareStyles = (isDarkMode: boolean, colors: any) => {
+  const shadowColor = isDarkMode ? '#000000' : '#000000';
+  
+  return {
+    actionButtonsContainer: {
+      position: 'absolute',
+      right: VERCEL_SPACING.xs,
+      top: -VERCEL_SPACING.md,
+      flexDirection: 'row',
+      borderRadius: VERCEL_BORDER_RADIUS.md,
+      padding: VERCEL_SPACING.xs,
+      gap: VERCEL_SPACING.xs,
+      shadowColor: shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      zIndex: 1,
+    },
+  };
+};
+
 // Complete Styles
 const styles = StyleSheet.create({
   // Message Container
@@ -408,14 +637,10 @@ const styles = StyleSheet.create({
     paddingTop: VERCEL_SPACING.xs,
   },
   avatar: {
-    width: VERCEL_LAYOUT.components.avatarSize.sm,
-    height: VERCEL_LAYOUT.components.avatarSize.sm,
-    borderRadius: VERCEL_LAYOUT.components.avatarSize.sm / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
   
@@ -467,7 +692,7 @@ const styles = StyleSheet.create({
     fontSize: VERCEL_TYPOGRAPHY.sizes.base,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     paddingVertical: VERCEL_SPACING.sm,
-    minHeight: VERCEL_LAYOUT.components.inputHeight - VERCEL_SPACING.xs * 2,
+    minHeight: 24, // Minimum height for single line
   },
   sendButton: {
     padding: VERCEL_SPACING.sm,
@@ -588,5 +813,51 @@ const styles = StyleSheet.create({
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
     textAlign: 'center',
+  },
+  
+  // Message Status Indicators
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: VERCEL_SPACING.xs,
+    marginTop: VERCEL_SPACING.xs,
+  },
+  statusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  sendingDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  statusIcon: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+  },
+  
+  // Message Action Buttons - Note: shadowColor set dynamically based on theme
+  actionButtonsContainer: {
+    position: 'absolute',
+    right: VERCEL_SPACING.xs,
+    top: -VERCEL_SPACING.md,
+    flexDirection: 'row',
+    borderRadius: VERCEL_BORDER_RADIUS.md,
+    padding: VERCEL_SPACING.xs,
+    gap: VERCEL_SPACING.xs,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 1,
+  },
+  actionButton: {
+    padding: VERCEL_SPACING.xs,
+    borderRadius: VERCEL_BORDER_RADIUS.sm,
+  },
+  actionIcon: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
   },
 });

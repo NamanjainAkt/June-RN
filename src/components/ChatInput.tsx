@@ -1,18 +1,27 @@
-import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import React from 'react';
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   Image,
   ScrollView,
-  Alert,
+  StyleSheet,
   TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Icon, ActivityIndicator } from 'react-native-paper';
-import * as ImagePicker from 'expo-image-picker';
+import { ActivityIndicator, Icon } from 'react-native-paper';
+import { MOBILE_RADIUS } from '../constants/mobile-design-tokens';
+import { VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../constants/vercel-theme';
 import { useAppTheme } from '../hooks';
-import { VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_TYPOGRAPHY, VERCEL_LAYOUT } from '../constants/vercel-theme';
 import { VercelButton } from './vercel/VercelComponents';
+
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
 
 interface ChatInputProps {
   value: string;
@@ -33,6 +42,21 @@ export function ChatInput({
 }: ChatInputProps) {
   const { colors, typography, borderRadius, spacing, layout, isDarkMode } = useAppTheme();
 
+  // Animation for the input border
+  const rotation = useSharedValue(0);
+  const isFocusedValue = useSharedValue(0);
+
+  React.useEffect(() => {
+    rotation.value = withRepeat(withTiming(360, { duration: 4000 }), -1, false);
+  }, []);
+
+  const animatedBorderStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${rotation.value}deg` }],
+      opacity: isFocusedValue.value,
+    };
+  });
+
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -41,9 +65,11 @@ export function ChatInput({
         'Please allow photo access in your device settings to send images.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: () => {
-            // Note: You might want to use Linking.openSettings() here
-          }}
+          {
+            text: 'Open Settings', onPress: () => {
+              // Note: You might want to use Linking.openSettings() here
+            }
+          }
         ]
       );
       return false;
@@ -90,7 +116,7 @@ export function ChatInput({
   const canSend = (value.trim().length > 0 || selectedImages.length > 0) && !isLoading;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
       {/* Image Preview */}
       {selectedImages.length > 0 && (
         <View style={styles.imagePreviewContainer}>
@@ -110,7 +136,7 @@ export function ChatInput({
                   style={[styles.removeButton, { backgroundColor: colors.error }]}
                   onPress={() => removeImage(index)}
                 >
-                  <Icon source="close" size={16} color={colors.textPrimary} />
+                  <Icon source="close" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -121,50 +147,62 @@ export function ChatInput({
       {/* Input Area */}
       <View style={styles.inputContainer}>
         <TouchableOpacity
-          style={[styles.attachButton, { borderColor: colors.border }]}
+          style={[styles.attachButton, { backgroundColor: colors.surface }]}
           onPress={handlePickImage}
           disabled={isLoading}
         >
           <Icon
-            source="image-outline"
-            size={layout.components.iconSize.md}
+            source="plus"
+            size={24}
             color={colors.textSecondary}
           />
         </TouchableOpacity>
 
-        <View style={[styles.textInputWrapper, { borderColor: colors.border }]}>
-          <Icon
-            source="message-outline"
-            size={layout.components.iconSize.sm}
-            color={colors.textTertiary}
-          />
-          <TextInput
-            value={value}
-            onChangeText={onChangeText}
-            placeholder="Ask anything..."
-            placeholderTextColor={colors.textTertiary}
-            style={[styles.textInput, { color: colors.textPrimary }]}
-            multiline
-            maxLength={2000}
-            editable={!isLoading}
-            selectionColor={colors.accent}
-          />
-        </View>
+        <View style={styles.mainInputWrapper}>
+          <View style={styles.borderAnimationWrapper}>
+            <Animated.View style={[styles.animatedBorder, animatedBorderStyle]}>
+              <LinearGradient
+                colors={[colors.accent, '#FF0080', colors.accent]}
+                style={styles.fullSize}
+              />
+            </Animated.View>
+          </View>
 
-        <VercelButton
-          isDarkMode={isDarkMode}
-          variant={canSend ? 'primary' : 'secondary'}
-          size="md"
-          onPress={onSend}
-          disabled={!canSend}
-          style={styles.sendButton}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={colors.textPrimary} />
-          ) : (
-            <Icon source="send" size={layout.components.iconSize.sm} color={colors.textPrimary} />
-          )}
-        </VercelButton>
+          <View style={[styles.textInputWrapper, { backgroundColor: colors.surface }]}>
+            <TextInput
+              value={value}
+              onChangeText={onChangeText}
+              placeholder="Message your agent..."
+              placeholderTextColor={colors.textTertiary}
+              style={[styles.textInput, { color: colors.textPrimary }]}
+              multiline
+              maxLength={2000}
+              editable={!isLoading}
+              selectionColor={colors.accent}
+              onFocus={() => {
+                isFocusedValue.value = withTiming(1, { duration: 300 });
+              }}
+              onBlur={() => {
+                isFocusedValue.value = withTiming(0, { duration: 300 });
+              }}
+            />
+
+            <VercelButton
+              isDarkMode={isDarkMode}
+              variant={canSend ? 'primary' : 'secondary'}
+              size="md"
+              onPress={onSend}
+              disabled={!canSend}
+              style={styles.sendButton}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color={colors.textPrimary} />
+              ) : (
+                <Icon source="arrow-up" size={20} color={canSend ? '#FFFFFF' : colors.textTertiary} />
+              )}
+            </VercelButton>
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -172,7 +210,8 @@ export function ChatInput({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
+    borderTopWidth: 0,
+    paddingBottom: 10,
   },
   imagePreviewContainer: {
     padding: VERCEL_SPACING.md,
@@ -185,64 +224,78 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   imagePreview: {
-    width: VERCEL_LAYOUT.components.avatarSize.lg * 2,
-    height: VERCEL_LAYOUT.components.avatarSize.lg * 2,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
+    width: 60,
+    height: 60,
+    borderRadius: MOBILE_RADIUS.md,
   },
   removeButton: {
     position: 'absolute',
-    top: -VERCEL_SPACING.xs,
-    right: -VERCEL_SPACING.xs,
-    width: VERCEL_SPACING.lg,
-    height: VERCEL_SPACING.lg,
-    borderRadius: VERCEL_SPACING.lg / 2,
+    top: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: VERCEL_SPACING.md,
+    alignItems: 'center',
+    paddingHorizontal: VERCEL_SPACING.md,
     gap: VERCEL_SPACING.sm,
   },
   attachButton: {
-    width: VERCEL_LAYOUT.components.buttonHeight.md,
-    height: VERCEL_LAYOUT.components.buttonHeight.md,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
-    borderWidth: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+  },
+  mainInputWrapper: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  borderAnimationWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  animatedBorder: {
+    width: '200%',
+    height: '200%',
+  },
+  fullSize: {
+    flex: 1,
   },
   textInputWrapper: {
-    flex: 1,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-    position: 'relative',
-    minHeight: VERCEL_LAYOUT.components.buttonHeight.md,
-    maxHeight: VERCEL_LAYOUT.components.buttonHeight.lg * 3,
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: VERCEL_SPACING.md,
-    top: VERCEL_SPACING.sm,
-    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 24,
+    margin: 2, // Border thickness
+    paddingLeft: VERCEL_SPACING.md,
+    paddingRight: 6,
+    overflow: 'hidden',
   },
   textInput: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    flex: 1,
+    fontSize: 16,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-    paddingLeft: VERCEL_LAYOUT.components.buttonHeight.md,
-    paddingRight: VERCEL_SPACING.md,
-    paddingVertical: VERCEL_SPACING.md,
-    minHeight: VERCEL_LAYOUT.components.buttonHeight.md,
-    maxHeight: VERCEL_LAYOUT.components.buttonHeight.lg * 3,
+    paddingVertical: 10,
+    minHeight: 40,
+    maxHeight: 120,
   },
   sendButton: {
-    width: VERCEL_LAYOUT.components.buttonHeight.md,
-    height: VERCEL_LAYOUT.components.buttonHeight.md,
-    borderRadius: VERCEL_BORDER_RADIUS.md,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     paddingHorizontal: 0,
     paddingVertical: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

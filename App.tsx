@@ -1,28 +1,41 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text } from 'react-native';
-import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
-import { NavigationIndependentTree, NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ClerkProvider, useAuth, useClerk, useOAuth } from '@clerk/clerk-expo';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { ClerkProvider, useAuth, useOAuth, useClerk } from '@clerk/clerk-expo';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationIndependentTree } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useCallback, useEffect } from 'react';
+import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
+import { LoadingScreen } from './src/components/LoadingScreen';
+import { VERCEL_BORDER_RADIUS, VERCEL_COLORS, VERCEL_TYPOGRAPHY } from './src/constants/vercel-theme';
 import { useAppTheme } from './src/hooks';
-import { VERCEL_COLORS, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SHADOWS } from './src/constants/vercel-theme';
 import { LoginScreen } from './src/screens/Auth/LoginScreen';
-import { HomeScreen } from './src/screens/Home/HomeScreen';
-import { ExploreScreen } from './src/screens/Explore/ExploreScreen';
-import { HistoryScreen } from './src/screens/History/HistoryScreen';
-import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
 import { ChatScreen } from './src/screens/Chat/ChatScreen';
 import { CreateAgentScreen } from './src/screens/CustomAgent/CreateAgentScreen';
+import { ExploreScreen } from './src/screens/Explore/ExploreScreen';
+import { HistoryScreen } from './src/screens/History/HistoryScreen';
+import { HomeScreen } from './src/screens/Home/HomeScreen';
+import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useChatStore } from './src/store/useChatStore';
-import { LoadingScreen } from './src/components/LoadingScreen';
-import * as Linking from 'expo-linking';
 
+// Browser warming for Clerk OAuth
+WebBrowser.maybeCompleteAuthSession();
+
+export const useWarmUpBrowser = () => {
+  useEffect(() => {
+    // Warm up the android browser to improve UX
+    // https://docs.expo.dev/guides/authentication/#improving-user-experience
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -35,7 +48,7 @@ const TAB_ICON: Record<string, any> = {
 
 function MainTabs() {
   const { colors, shadows } = useAppTheme();
-  
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -58,23 +71,23 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
+      <Tab.Screen
+        name="Home"
         component={HomeScreen}
         options={{ title: 'Home', headerShown: false }}
       />
-      <Tab.Screen 
-        name="Explore" 
+      <Tab.Screen
+        name="Explore"
         component={ExploreScreen}
         options={{ title: 'Explore', headerShown: false }}
       />
-      <Tab.Screen 
-        name="History" 
+      <Tab.Screen
+        name="History"
         component={HistoryScreen}
         options={{ title: 'History', headerShown: false }}
       />
-      <Tab.Screen 
-        name="Settings" 
+      <Tab.Screen
+        name="Settings"
         component={SettingsScreen}
         options={{ title: 'Settings', headerShown: false }}
       />
@@ -88,10 +101,15 @@ function RootNavigation() {
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
   const { signOut: clerkSignOut } = useClerk();
   const { colors } = useAppTheme();
-  const loadSessions = useChatStore((state) => state.loadSessions);
+  const loadAgents = useChatStore((state) => state.loadAgents);
+
+  // Warm up the browser for Clerk OAuth
+  useWarmUpBrowser();
+
+  const { user: clerkUser } = useClerk();
 
   // Debug: Log auth state
-  console.log('Auth State:', { isLoaded, clerkSignedIn, userId });
+  console.log('Auth State:', { isLoaded, clerkSignedIn, userId, clerkUser });
 
   useEffect(() => {
     if (isLoaded) {
@@ -99,64 +117,63 @@ function RootNavigation() {
         setSignedIn(true);
         setUser({
           id: userId,
-          email: 'user@example.com',
-          name: 'User',
+          email: clerkUser?.primaryEmailAddress?.emailAddress || 'user@example.com',
+          name: clerkUser?.fullName || clerkUser?.username || 'User',
+          imageUrl: clerkUser?.imageUrl,
         });
         setLoading(false);
-        loadSessions(userId);
+        loadAgents(userId);
       } else {
+        setSignedIn(false);
+        setUser(null);
         setLoading(false);
       }
     }
-  }, [isLoaded, clerkSignedIn, userId, setSignedIn, setUser, setLoading, loadSessions]);
+  }, [isLoaded, clerkSignedIn, userId, clerkUser, setSignedIn, setUser, setLoading, loadAgents]);
 
   const handleGoogleLogin = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔐 Starting Google OAuth flow...');
 
-      const { createdSessionId, setActive, signUp } = await startOAuthFlow({
-        redirectUrl: 'june://oauth-callback',
+      const result = await startOAuthFlow({
+        redirectUrl: Linking.createURL('/', { scheme: 'june' }),
       });
 
-      console.log('📱 OAuth result:', { createdSessionId, hasSetActive: !!setActive });
+      console.log('📱 OAuth result:', {
+        createdSessionId: result.createdSessionId,
+        hasSetActive: !!result.setActive,
+        hasSignUp: !!result.signUp
+      });
 
-      if (createdSessionId && setActive) {
-        console.log('✅ Setting active session:', createdSessionId);
-        await setActive({ session: createdSessionId });
+      if (result.createdSessionId && result.setActive) {
+        console.log('✅ Setting active session:', result.createdSessionId);
+        await result.setActive({ session: result.createdSessionId });
 
         // Wait a moment for Clerk to update auth state
         await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Update app state
-        setSignedIn(true);
-        setLoading(false);
-
-        // Use the latest user ID from Clerk after session is set
-        const { userId: newUserId } = useAuth();
-        if (newUserId) {
-          console.log('👤 User logged in:', newUserId);
-          setUser({
-            id: newUserId,
-            email: 'user@example.com',
-            name: 'User',
-          });
-          loadSessions(newUserId);
-        }
-      } else if (signUp) {
+      } else if (result.signUp) {
         console.log('📝 Sign-up flow - user needs to complete signup');
-        // Handle sign-up flow if needed
         setLoading(false);
       } else {
         console.warn('⚠️ No session created, user might have cancelled');
         setLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Google login error:', error);
+
+      const clerkError = error as any;
+      const isSignedOutError = clerkError?.clerkError === true &&
+        clerkError?.errors?.[0]?.code === 'signed_out';
+
+      if (isSignedOutError) {
+        console.warn('⚠️ Clerk reported "signed_out" error during OAuth flow. This usually means the browser window was closed or the flow was interrupted.');
+      }
+
       console.error('Error details:', JSON.stringify(error));
       setLoading(false);
     }
-  }, [startOAuthFlow, setLoading, setSignedIn, setUser, userId, loadSessions, useAuth]);
+  }, [startOAuthFlow, setLoading]);
 
   const handleDemoLogin = useCallback(() => {
     setLoading(true);
@@ -166,9 +183,9 @@ function RootNavigation() {
       email: 'demo@june.ai',
       name: 'Demo User',
     });
-    loadSessions('demo-user');
+    loadAgents('demo-user');
     setLoading(false);
-  }, [setSignedIn, setUser, setLoading, loadSessions]);
+  }, [setSignedIn, setUser, setLoading, loadAgents]);
 
   // Debug: Force logout for development
   const handleForceLogout = useCallback(async () => {
@@ -185,17 +202,8 @@ function RootNavigation() {
   }, [clerkSignOut, setSignedIn, setUser, setLoading]);
 
   return (
-    <NavigationIndependentTree>
-      {__DEV__ && (
-        <View style={{ position: 'absolute', top: 50, left: 10, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, borderRadius: 8 }}>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            Auth: {isLoaded ? (clerkSignedIn ? 'Signed In' : 'Not Signed In') : 'Loading...'}
-          </Text>
-          <Text style={{ color: 'white', fontSize: 10 }}>
-            User: {userId || 'None'}
-          </Text>
-        </View>
-      )}
+    <>
+
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -205,15 +213,15 @@ function RootNavigation() {
       >
         {clerkSignedIn ? (
           <>
-            <Stack.Screen 
-              name="Main" 
+            <Stack.Screen
+              name="Main"
               component={MainTabs}
               options={{ headerShown: false }}
             />
-            <Stack.Screen 
-              name="Chat" 
+            <Stack.Screen
+              name="Chat"
               component={ChatScreen}
-              options={{ 
+              options={{
                 headerShown: true,
                 headerTitleAlign: 'center',
                 headerStyle: {
@@ -222,10 +230,10 @@ function RootNavigation() {
                 headerTintColor: colors.textPrimary,
               }}
             />
-            <Stack.Screen 
-              name="CustomAgent" 
+            <Stack.Screen
+              name="CustomAgent"
               component={CreateAgentScreen}
-              options={{ 
+              options={{
                 headerShown: true,
                 headerTitleAlign: 'center',
                 headerTitle: 'Create Custom Agent',
@@ -239,22 +247,22 @@ function RootNavigation() {
         ) : (
           <Stack.Screen
             name="Login"
-            options={{ 
+            options={{
               headerShown: false,
               animation: 'fade_from_bottom',
             }}
           >
             {() => (
-              <LoginScreen 
+              <LoginScreen
                 onGoogleLogin={handleGoogleLogin}
                 onDemoLogin={handleDemoLogin}
-                isLoading={useAuthStore.getState().isLoading} 
+                isLoading={useAuthStore.getState().isLoading}
               />
             )}
           </Stack.Screen>
         )}
       </Stack.Navigator>
-    </NavigationIndependentTree>
+    </>
   );
 }
 
@@ -271,9 +279,9 @@ interface CustomFontConfig {
 
 const createFontConfig = (weight: FontWeight, size: number, lineHeight: number, letterSpacing: number = 0): CustomFontConfig => ({
   fontFamily: weight === '500' ? VERCEL_TYPOGRAPHY.fontFamily.medium :
-             weight === '600' ? VERCEL_TYPOGRAPHY.fontFamily.semibold :
-             weight === '700' ? VERCEL_TYPOGRAPHY.fontFamily.bold :
-             VERCEL_TYPOGRAPHY.fontFamily.regular,
+    weight === '600' ? VERCEL_TYPOGRAPHY.fontFamily.semibold :
+      weight === '700' ? VERCEL_TYPOGRAPHY.fontFamily.bold :
+        VERCEL_TYPOGRAPHY.fontFamily.regular,
   fontWeight: weight,
   fontSize: size,
   lineHeight: lineHeight,
@@ -287,22 +295,22 @@ const fonts = configureFonts({
     displayLarge: { ...createFontConfig('700', 57, 64, -0.25) },
     displayMedium: { ...createFontConfig('700', 45, 52, 0) },
     displaySmall: { ...createFontConfig('700', 36, 44, 0) },
-    
+
     // Headline variants
     headlineLarge: { ...createFontConfig('600', 32, 40, 0) },
     headlineMedium: { ...createFontConfig('600', 28, 36, 0) },
     headlineSmall: { ...createFontConfig('600', 24, 32, 0) },
-    
+
     // Title variants
     titleLarge: { ...createFontConfig('500', 22, 28, 0) },
     titleMedium: { ...createFontConfig('500', 16, 24, 0.15) },
     titleSmall: { ...createFontConfig('500', 14, 20, 0.1) },
-    
+
     // Body variants
     bodyLarge: { ...createFontConfig('400', 16, 24, 0.5) },
     bodyMedium: { ...createFontConfig('400', 14, 20, 0.25) },
     bodySmall: { ...createFontConfig('400', 12, 16, 0.4) },
-    
+
     // Label variants
     labelLarge: { ...createFontConfig('500', 14, 20, 0.1) },
     labelMedium: { ...createFontConfig('500', 12, 16, 0.5) },
@@ -370,37 +378,17 @@ export default function App() {
     <ClerkProvider
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || ''}
       tokenCache={{
-        getToken: async () => {
-          try {
-            const token = await SecureStore.getItemAsync('clerkToken');
-            return token || null;
-          } catch {
-            return null;
-          }
-        },
-        saveToken: async (token: string) => {
-          try {
-            await SecureStore.setItemAsync('clerkToken', token);
-          } catch (error) {
-            console.error('Error saving token:', error);
-          }
-        },
-        clearToken: async () => {
-          try {
-            await SecureStore.deleteItemAsync('clerkToken');
-          } catch (error) {
-            console.error('Error clearing token:', error);
-          }
-        },
+        getToken: (key: string) => SecureStore.getItemAsync(key),
+        saveToken: (key: string, value: string) => SecureStore.setItemAsync(key, value),
       }}
     >
       <PaperProvider theme={paperTheme}>
         <StatusBar
           hidden={true}
         />
-        <NavigationContainer linking={linking}>
+        <NavigationIndependentTree>
           <RootNavigation />
-        </NavigationContainer>
+        </NavigationIndependentTree>
       </PaperProvider>
     </ClerkProvider>
   );

@@ -4,6 +4,7 @@ import Markdown from 'react-native-easy-markdown';
 import { Icon, TouchableRipple } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
 import { useDynamicFontSize, useAppTheme } from '../hooks';
+import { VERCEL_SPACING } from '../constants/vercel-theme';
 
 interface MarkdownViewProps {
   content: string;
@@ -29,22 +30,22 @@ export function MarkdownView({ content }: MarkdownViewProps) {
       <Markdown
         markdownStyles={{
           h1: {
-            color: colors.accent,
+            color: colors.textPrimary,
             fontSize: baseFontSize * 1.5,
             fontWeight: 'bold',
           },
           h2: {
-            color: colors.accent,
+            color: colors.textPrimary,
             fontSize: baseFontSize * 1.25,
             fontWeight: 'bold',
           },
           h3: {
-            color: colors.accent,
+            color: colors.textPrimary,
             fontSize: baseFontSize * 1.125,
             fontWeight: '600',
           },
           h4: {
-            color: colors.accent,
+            color: colors.textPrimary,
             fontSize: baseFontSize,
             fontWeight: '600',
           },
@@ -77,13 +78,13 @@ export function MarkdownView({ content }: MarkdownViewProps) {
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    padding: 12,
+    padding: VERCEL_SPACING.md,
   },
   copyButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    padding: 8,
+    top: VERCEL_SPACING.xs,
+    right: VERCEL_SPACING.xs,
+    padding: VERCEL_SPACING.sm,
     zIndex: 1,
   },
 });

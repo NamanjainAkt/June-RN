@@ -1,14 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Alert, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { formatDistanceToNow } from 'date-fns';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { VercelButton } from '../../components/vercel/VercelComponents';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
+import { useAppTheme } from '../../hooks';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useChatStore } from '../../store/useChatStore';
-import { useAppTheme } from '../../hooks';
 import { ChatSession } from '../../types';
-import { formatDistanceToNow } from 'date-fns';
-import { Card, Avatar } from '../../components';
-import { VercelCard, VercelAvatar, VercelButton } from '../../components/vercel/VercelComponents';
-import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_BORDER_RADIUS } from '../../constants/vercel-theme';
 
 export function HistoryScreen() {
   const navigation = useNavigation<any>();
@@ -72,52 +71,52 @@ export function HistoryScreen() {
       <TouchableOpacity
         onPress={() => handleSessionPress(item)}
         disabled={isDeleting}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
       >
-        <VercelCard variant="bordered" isDarkMode={isDarkMode} style={styles.sessionCard}>
-          <View style={styles.sessionLeft}>
-            <VercelAvatar name={item.agentName} size="lg" isDarkMode={isDarkMode} />
+        <View style={[styles.sessionCard, {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        }]}>
+          {/* Line 1: Name + Time */}
+          <View style={styles.sessionHeader}>
+            <Text style={[styles.sessionTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+              {item.agentName}
+            </Text>
+            <Text style={[styles.sessionTime, { color: colors.textTertiary }]}>
+              {timeAgo}
+            </Text>
           </View>
 
-          <View style={styles.sessionInfo}>
-            <View style={styles.sessionHeader}>
-              <Text style={[styles.sessionTitle, { color: colors.textPrimary }]}>
-                {item.agentName}
-              </Text>
-              <Text style={[styles.sessionTime, { color: colors.textTertiary }]}>
-                {timeAgo}
-              </Text>
-            </View>
+          {/* Line 2: Preview */}
+          <Text
+            style={[styles.sessionPreview, { color: colors.textSecondary }]}
+            numberOfLines={1}
+          >
+            {preview}
+          </Text>
 
-            <Text
-              style={[styles.sessionPreview, { color: colors.textSecondary }]}
-              numberOfLines={2}
-            >
-              {preview}
+          {/* Line 3: Message Count + Delete */}
+          <View style={styles.sessionFooter}>
+            <Text style={[styles.messageCount, { color: colors.textTertiary }]}>
+              {item.messages.length} message{item.messages.length !== 1 ? 's' : ''}
             </Text>
 
-            <View style={styles.sessionMeta}>
-              <Text style={[styles.messageCount, { color: colors.textTertiary }]}>
-                {item.messages.length} message{item.messages.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
+            <TouchableOpacity
+              onPress={() => handleDeleteSession(item.id)}
+              disabled={isDeleting}
+              style={styles.deleteButton}
+            >
+              <Text style={{ color: colors.error, fontSize: 18 }}>×</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            onPress={() => handleDeleteSession(item.id)}
-            disabled={isDeleting}
-            style={styles.deleteButton}
-          >
-            <Text style={{ color: colors.error, fontSize: 16 }}>🗑️</Text>
-          </TouchableOpacity>
-        </VercelCard>
+        </View>
       </TouchableOpacity>
     );
   }, [colors, handleSessionPress, handleDeleteSession, deletingId]);
 
   const keyExtractor = useCallback((item: ChatSession) => item.id, []);
 
-return (
+  return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
@@ -176,8 +175,10 @@ const styles = StyleSheet.create({
     paddingBottom: VERCEL_SPACING.md,
   },
   title: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes['2xl'],
+    fontSize: VERCEL_TYPOGRAPHY.sizes['3xl'],
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    letterSpacing: -0.5,
+    marginBottom: VERCEL_SPACING.xs,
   },
   loadingContainer: {
     flex: 1,
@@ -193,52 +194,48 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   sessionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: VERCEL_SPACING.md,
     marginBottom: VERCEL_SPACING.sm,
-    gap: VERCEL_SPACING.md,
-  },
-  sessionLeft: {
-    marginRight: VERCEL_SPACING.sm,
-  },
-  sessionInfo: {
-    flex: 1,
-    gap: VERCEL_SPACING.xs,
+    borderRadius: VERCEL_BORDER_RADIUS.md,
+    borderWidth: 1,
+    height: 88,
+    justifyContent: 'space-between',
   },
   sessionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: VERCEL_SPACING.xs,
+    marginBottom: 6,
   },
   sessionTitle: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
     flex: 1,
   },
   sessionTime: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+    marginLeft: VERCEL_SPACING.sm,
   },
   sessionPreview: {
-    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-    lineHeight: VERCEL_TYPOGRAPHY.lineHeights.base,
-    marginBottom: VERCEL_SPACING.xs,
+    marginBottom: 6,
   },
-  sessionMeta: {
+  sessionFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   messageCount: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
-    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
   deleteButton: {
-    padding: VERCEL_SPACING.sm,
-    marginLeft: VERCEL_SPACING.sm,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyState: {
     flex: 1,

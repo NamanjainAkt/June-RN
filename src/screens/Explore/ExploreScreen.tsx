@@ -1,14 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useMemo, useState } from 'react';
+import { Dimensions, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
 
-import { VercelInput, VercelButton } from '../../components/vercel/VercelComponents';
-import { VercelAgentCard } from '../../components/vercel/VercelComponents';
-import { useChatStore } from '../../store/useChatStore';
-import { useAppTheme } from '../../hooks';
-import { Agent, AgentCategory } from '../../types';
+import { VercelAgentCard, VercelInput } from '../../components/vercel/VercelComponents';
 import { CATEGORIES } from '../../constants/agents';
-import { getVercelColors, VERCEL_TYPOGRAPHY, VERCEL_SPACING, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT } from '../../constants/vercel-theme';
+import { GRADIENT_PRESETS, MOBILE_RADIUS } from '../../constants/mobile-design-tokens';
+import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
+import { useAppTheme } from '../../hooks';
+import { useChatStore } from '../../store/useChatStore';
+import { Agent, AgentCategory } from '../../types';
 
 export function ExploreScreen() {
   const navigation = useNavigation<any>();
@@ -20,16 +27,58 @@ export function ExploreScreen() {
 
   const colors = getVercelColors(isDarkMode);
 
-  const numColumns = 2;
+  // Animation for the Create Agent button border
+  const rotation = useSharedValue(0);
+
+  React.useEffect(() => {
+    rotation.value = withRepeat(withTiming(360, { duration: 3000 }), -1, false);
+  }, []);
+
+  const animatedBorderStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${rotation.value}deg` }],
+    };
+  });
+
+  // Responsive configuration using all breakpoints
+  const screenWidth = Dimensions.get('window').width;
+  const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md;
+  const isMd = screenWidth >= VERCEL_LAYOUT.breakpoints.md && screenWidth < VERCEL_LAYOUT.breakpoints.lg;
+  const isLg = screenWidth >= VERCEL_LAYOUT.breakpoints.lg && screenWidth < VERCEL_LAYOUT.breakpoints.xl;
+  const isXl = screenWidth >= VERCEL_LAYOUT.breakpoints.xl;
+
+  // Force single column for mobile-first experience
+  const numColumns = 1;
+
+  // Responsive padding values
+  const getHeaderPadding = () => {
+    if (isSm) return VERCEL_SPACING.md;
+    if (isMd) return VERCEL_SPACING.lg;
+    if (isLg) return VERCEL_SPACING.xl;
+    return VERCEL_SPACING['2xl'];
+  };
+
+  // Dynamic font sizes
+  const getTitleSize = () => {
+    if (isXl) return VERCEL_TYPOGRAPHY.sizes['3xl'];
+    if (isLg) return VERCEL_TYPOGRAPHY.sizes['2xl'];
+    if (isMd) return VERCEL_TYPOGRAPHY.sizes.xl;
+    return VERCEL_TYPOGRAPHY.sizes.lg;
+  };
 
   const filteredAgents = useMemo(() => {
-    return agents.filter((agent) => {
-      const matchesSearch =
-        agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        agent.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || agent.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
+    return agents
+      .filter((agent) => {
+        const matchesSearch =
+          agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          agent.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || agent.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      })
+      .map((agent, index) => ({
+        ...agent,
+        gradientColors: agent.gradientColors || GRADIENT_PRESETS[index % GRADIENT_PRESETS.length],
+      }));
   }, [agents, searchQuery, selectedCategory]);
 
   const handleAgentPress = (agent: Agent) => {
@@ -53,8 +102,14 @@ export function ExploreScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+      <View style={[styles.header, {
+        backgroundColor: colors.surface,
+        paddingHorizontal: getHeaderPadding(),
+      }]}>
+        <Text style={[styles.title, {
+          color: colors.textPrimary,
+          fontSize: getTitleSize(),
+        }]}>
           Explore Agents
         </Text>
 
@@ -94,16 +149,16 @@ export function ExploreScreen() {
               >
                 <View style={[
                   styles.categoryChip,
-                  selectedCategory === item.value 
-                    ? { backgroundColor: colors.accent } 
+                  selectedCategory === item.value
+                    ? { backgroundColor: colors.accent }
                     : { backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1 }
                 ]}>
                   <Text style={[
                     styles.categoryChipText,
-                    { 
-                      color: selectedCategory === item.value 
-                        ? colors.textPrimary 
-                        : colors.textSecondary 
+                    {
+                      color: selectedCategory === item.value
+                        ? colors.textPrimary
+                        : colors.textSecondary
                     }
                   ]}>
                     {item.label}
@@ -128,6 +183,29 @@ export function ExploreScreen() {
       {/* Agent Grid */}
       <FlatList
         data={filteredAgents}
+        ListHeaderComponent={
+          <View style={styles.createButtonContainer}>
+            <TouchableOpacity
+              style={styles.animatedButtonWrapper}
+              onPress={() => navigation.navigate('CreateAgent')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.createButtonContent, { backgroundColor: colors.surface }]}>
+                <View style={styles.borderAnimationWrapper}>
+                  <Animated.View style={[styles.animatedBorder, animatedBorderStyle]}>
+                    <LinearGradient
+                      colors={[colors.accent, '#FF0080', colors.accent]}
+                      style={styles.fullSize}
+                    />
+                  </Animated.View>
+                </View>
+                <Text style={[styles.createButtonText, { color: colors.textPrimary }]}>
+                  ✨ Create New Agent
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        }
         renderItem={({ item }) => (
           <View style={styles.agentItem}>
             <VercelAgentCard
@@ -139,7 +217,6 @@ export function ExploreScreen() {
         )}
         keyExtractor={(item) => item.id}
         numColumns={numColumns}
-        columnWrapperStyle={styles.agentsGrid}
         contentContainerStyle={styles.agentsList}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -240,11 +317,12 @@ const styles = StyleSheet.create({
   },
   agentsList: {
     paddingBottom: VERCEL_SPACING.xl,
+    paddingHorizontal: VERCEL_SPACING.lg,
     flexGrow: 1,
   },
   agentItem: {
-    flex: 1,
-    margin: '1%',
+    width: '100%',
+    marginBottom: VERCEL_SPACING.md,
   },
   emptyState: {
     flex: 1,
@@ -267,5 +345,42 @@ const styles = StyleSheet.create({
     fontSize: VERCEL_TYPOGRAPHY.sizes.base,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
     textAlign: 'center',
+  },
+  createButtonContainer: {
+    paddingVertical: VERCEL_SPACING.lg,
+    marginBottom: VERCEL_SPACING.sm,
+  },
+  animatedButtonWrapper: {
+    width: '100%',
+    height: 64,
+    borderRadius: MOBILE_RADIUS.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  createButtonContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: MOBILE_RADIUS.md,
+    margin: 2, // Border thickness
+    overflow: 'hidden',
+    zIndex: 1,
+  },
+  borderAnimationWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  animatedBorder: {
+    width: '200%',
+    height: '200%',
+  },
+  fullSize: {
+    flex: 1,
+  },
+  createButtonText: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
   },
 });

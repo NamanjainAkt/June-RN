@@ -7,9 +7,10 @@ export interface Agent {
   systemPrompt: string;
   isCustom?: boolean;
   createdAt?: number;
+  gradientColors?: string[];
 }
 
-export type AgentCategory = 
+export type AgentCategory =
   | 'writing'
   | 'coding'
   | 'image'
