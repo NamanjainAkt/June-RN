@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect } from 'react';
 import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LoadingScreen } from './src/components/LoadingScreen';
 import { VERCEL_BORDER_RADIUS, VERCEL_COLORS, VERCEL_TYPOGRAPHY } from './src/constants/vercel-theme';
 import { useAppTheme } from './src/hooks';
@@ -376,12 +377,12 @@ export default function App() {
       }}
     >
       <PaperProvider theme={paperTheme}>
-        <StatusBar
-          hidden={true}
-        />
-        <NavigationIndependentTree>
-          <RootNavigation />
-        </NavigationIndependentTree>
+        <StatusBar style="auto" />
+        <SafeAreaProvider>
+          <NavigationIndependentTree>
+            <RootNavigation />
+          </NavigationIndependentTree>
+        </SafeAreaProvider>
       </PaperProvider>
     </ClerkProvider>
   );
