@@ -9,6 +9,7 @@ import Animated, {
   withRepeat,
   withTiming
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { VercelAgentCard, VercelInput } from '../../components/vercel/VercelComponents';
 import { CATEGORIES } from '../../constants/agents';
@@ -111,11 +112,14 @@ export function ExploreScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, {
-        backgroundColor: colors.surface,
-        paddingHorizontal: getHeaderPadding(),
-      }]}>
+      {/* Header with SafeAreaView to fix notch overlap */}
+      <SafeAreaView
+        edges={['top']}
+        style={[styles.header, {
+          backgroundColor: colors.surface,
+          paddingHorizontal: getHeaderPadding(),
+        }]}
+      >
         <Text style={[styles.title, {
           color: colors.textPrimary,
           fontSize: getTitleSize(),
@@ -181,7 +185,7 @@ export function ExploreScreen() {
             contentContainerStyle={styles.categoriesList}
           />
         </View>
-      </View>
+      </SafeAreaView>
 
       {/* Results Count */}
       <View style={styles.resultsContainer}>
@@ -259,7 +263,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: '6%',
     paddingHorizontal: VERCEL_SPACING.lg,
     paddingBottom: VERCEL_SPACING.md,
   },

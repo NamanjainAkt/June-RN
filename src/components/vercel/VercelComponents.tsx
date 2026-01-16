@@ -2,7 +2,7 @@
 // Clean, Minimal, Production-Ready Components
 
 import React from 'react';
-import { StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { Agent } from '../../types';
 
@@ -258,7 +258,7 @@ export const VercelInput: React.FC<VercelInputProps> = ({
       >
         {leftIcon && <View style={styles.inputIconLeft}>{leftIcon}</View>}
 
-        <Text
+        <TextInput
           style={[
             styles.input,
             {
@@ -267,9 +267,14 @@ export const VercelInput: React.FC<VercelInputProps> = ({
               fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
             },
           ]}
-        >
-          {value || placeholder}
-        </Text>
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textTertiary}
+          multiline={multiline}
+          editable={!disabled}
+          autoCapitalize="none"
+        />
 
         {rightIcon && <View style={styles.inputIconRight}>{rightIcon}</View>}
       </View>
