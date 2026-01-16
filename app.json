@@ -16,11 +16,6 @@
             "CFBundleURLSchemes": [
               "june"
             ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "june"
-            ]
           }
         ]
       }
@@ -34,21 +29,9 @@
       },
       "permissions": [
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE"
       ],
       "intentFilters": [
-        {
-          "action": "VIEW",
-          "data": {
-            "scheme": "june"
-          }
-        },
         {
           "action": "VIEW",
           "data": {
