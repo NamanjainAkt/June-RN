@@ -16,6 +16,11 @@
             "CFBundleURLSchemes": [
               "june"
             ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "june"
+            ]
           }
         ]
       }
@@ -29,9 +34,21 @@
       },
       "permissions": [
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "june"
+          }
+        },
         {
           "action": "VIEW",
           "data": {
@@ -79,6 +96,12 @@
       "eas": {
         "projectId": "e971a59a-0eb8-4b25-8522-3b50aa4f4fc7"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e971a59a-0eb8-4b25-8522-3b50aa4f4fc7"
     }
   }
 }
