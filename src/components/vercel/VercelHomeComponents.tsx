@@ -1,6 +1,7 @@
 // Vercel-Style Home Screen Components
 // Clean, Minimal, Professional Interface
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
@@ -61,9 +62,7 @@ export const VercelHomeHeader: React.FC<VercelHomeHeaderProps> = ({
           style={styles.settingsButton}
           onPress={onSettingsPress}
         >
-          <Text style={[styles.settingsIcon, { color: colors.textSecondary }]}>
-            ⚙️
-          </Text>
+          <MaterialCommunityIcons name="cog-outline" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -103,9 +102,7 @@ export const VercelQuickActionCard: React.FC<VercelQuickActionCardProps> = ({
       activeOpacity={0.8}
     >
       <View style={styles.quickActionContent}>
-        <Text style={[styles.quickActionIcon, { color: colors.textPrimary }]}>
-          {icon}
-        </Text>
+        <MaterialCommunityIcons name={icon as any} size={32} color={colors.textPrimary} />
         <Text style={[
           styles.quickActionTitle,
           { color: colors.textPrimary },
@@ -302,7 +299,7 @@ export const VercelFooter: React.FC<VercelFooterProps> = ({
         styles.footerText,
         { color: colors.textTertiary },
       ]}>
-        June AI {version} • Powered by Gemini 2.5 Flash Lite
+        June AI {version}
       </Text>
     </View>
   );

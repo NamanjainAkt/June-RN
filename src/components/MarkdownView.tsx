@@ -1,10 +1,8 @@
+import * as Clipboard from 'expo-clipboard';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Markdown from 'react-native-easy-markdown';
-import { Icon, TouchableRipple } from 'react-native-paper';
-import * as Clipboard from 'expo-clipboard';
-import { useDynamicFontSize, useAppTheme } from '../hooks';
-import { VERCEL_SPACING } from '../constants/vercel-theme';
+import { useAppTheme, useDynamicFontSize } from '../hooks';
 
 interface MarkdownViewProps {
   content: string;
@@ -20,13 +18,6 @@ export function MarkdownView({ content }: MarkdownViewProps) {
 
   return (
     <View style={styles.container}>
-      <TouchableRipple
-        style={styles.copyButton}
-        onPress={copyToClipboard}
-        borderless
-      >
-        <Icon source="content-copy" size={18} color={colors.textSecondary} />
-      </TouchableRipple>
       <Markdown
         markdownStyles={{
           h1: {
@@ -78,13 +69,5 @@ export function MarkdownView({ content }: MarkdownViewProps) {
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
-    padding: VERCEL_SPACING.md,
-  },
-  copyButton: {
-    position: 'absolute',
-    top: VERCEL_SPACING.xs,
-    right: VERCEL_SPACING.xs,
-    padding: VERCEL_SPACING.sm,
-    zIndex: 1,
   },
 });

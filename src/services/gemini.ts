@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
+import { generateEnhancedImagePrompt } from './perplexity';
 
 const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
 
@@ -21,14 +22,19 @@ const SAFETY_SETTINGS = [
   },
 ];
 
+const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
+const TEXT_MODEL_NAME = 'gemini-2.5-flash';
+
 export async function generateResponse(
   prompt: string,
   systemPrompt: string,
-  imageBase64?: string
-): Promise<string> {
+  imageBase64?: string,
+  isImageGeneration?: boolean
+): Promise<{ text: string; imageUrl?: string }> {
   try {
+    const modelName = isImageGeneration ? IMAGE_MODEL_NAME : TEXT_MODEL_NAME;
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: modelName,
       safetySettings: SAFETY_SETTINGS,
       generationConfig: {
         temperature: 0.7,
@@ -82,27 +88,42 @@ export async function generateResponse(
     });
 
     const response = result.response;
-    
+
     if (!response.text()) {
       throw new Error('Empty response from API');
     }
 
-    return response.text();
+    const text = response.text();
+
+    if (isImageGeneration) {
+      // Use Perplexity to enhance the prompt for the final image renderer
+      const enhancedPrompt = await generateEnhancedImagePrompt(text);
+
+      const seed = Math.floor(Math.random() * 1000000);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
+
+      return {
+        text: `I've used Perplexity to craft a high-fidelity vision of your request. \n\n**Generated for:** "${text}"`,
+        imageUrl
+      };
+    }
+
+    return { text };
   } catch (error: any) {
     console.error('Gemini API Error:', error);
-    
+
     if (error.message?.includes('Empty response')) {
       throw new Error('The model did not generate a response. Please try again.');
     }
-    
+
     if (error.message?.includes('SAFETY')) {
       throw new Error('This request was blocked due to safety guidelines.');
     }
-    
+
     if (error.message?.includes('rate limit')) {
       throw new Error('Rate limit exceeded. Please wait a moment and try again.');
     }
-    
+
     throw new Error(`API Error: ${error.message || 'Unknown error occurred'}`);
   }
 }
@@ -110,11 +131,12 @@ export async function generateResponse(
 export async function* generateStreamingResponse(
   prompt: string,
   systemPrompt: string,
-  imageBase64?: string
+  imageBase64?: string,
+  isImageGeneration?: boolean
 ): AsyncGenerator<string> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash-lite',
+      model: isImageGeneration ? IMAGE_MODEL_NAME : TEXT_MODEL_NAME,
       safetySettings: SAFETY_SETTINGS,
       generationConfig: {
         temperature: 0.7,
@@ -181,16 +203,16 @@ export async function* generateStreamingResponse(
 
 export function formatAIResponse(text: string): string {
   let formatted = text.trim();
-  
+
   formatted = formatted.replace(/\*\*(.*?)\*\*/g, '\n$1\n');
   formatted = formatted.replace(/\*(.*?)\*/g, '$1');
   formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, '\n$2\n');
   formatted = formatted.replace(/`([^`]+)`/g, '$1');
   formatted = formatted.replace(/^[-*]\s/gm, '• ');
   formatted = formatted.replace(/^\d+\.\s/gm, '#. ');
-  
+
   formatted = formatted.replace(/\n{3,}/g, '\n\n');
   formatted = formatted.replace(/^\s+|\s+$/g, '');
-  
+
   return formatted;
 }

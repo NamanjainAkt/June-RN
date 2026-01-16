@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { formatDistanceToNow } from 'date-fns';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -12,7 +13,7 @@ import { ChatSession } from '../../types';
 export function HistoryScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
-  const { sessions, loadSessions, deleteSession, isLoading } = useChatStore();
+  const { sessions, loadSessions, deleteSession, clearAllSessions, isLoading } = useChatStore();
   const { isDarkMode } = useAppTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -106,7 +107,7 @@ export function HistoryScreen() {
               disabled={isDeleting}
               style={styles.deleteButton}
             >
-              <Text style={{ color: colors.error, fontSize: 18 }}>×</Text>
+              <MaterialCommunityIcons name="delete-outline" size={20} color={colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -119,9 +120,33 @@ export function HistoryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
-          Chat History
-        </Text>
+        <View style={styles.headerTop}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            Chat History
+          </Text>
+          {sessions.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert(
+                  'Clear All History',
+                  'Are you sure you want to delete all conversations? This cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Clear All',
+                      style: 'destructive',
+                      onPress: () => user?.id && clearAllSessions(user.id)
+                    }
+                  ]
+                );
+              }}
+            >
+              <Text style={{ color: colors.error, fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium }}>
+                Clear All
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {isLoading && !refreshing ? (
@@ -140,9 +165,7 @@ export function HistoryScreen() {
           onRefresh={handleRefresh}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={[styles.emptyIcon, { color: colors.textTertiary }]}>
-                📚
-              </Text>
+              <MaterialCommunityIcons name="book-open-variant" size={64} color={colors.textTertiary} style={{ marginBottom: VERCEL_SPACING.lg }} />
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                 No Chat History
               </Text>
@@ -174,6 +197,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: VERCEL_SPACING.lg,
     paddingBottom: VERCEL_SPACING.md,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   title: {
     fontSize: VERCEL_TYPOGRAPHY.sizes['3xl'],
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
@@ -198,14 +226,13 @@ const styles = StyleSheet.create({
     marginBottom: VERCEL_SPACING.sm,
     borderRadius: VERCEL_BORDER_RADIUS.md,
     borderWidth: 1,
-    height: 88,
-    justifyContent: 'space-between',
+    minHeight: 100,
   },
   sessionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   sessionTitle: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.base,
@@ -220,22 +247,26 @@ const styles = StyleSheet.create({
   sessionPreview: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
-    marginBottom: 6,
+    marginBottom: 12,
   },
   sessionFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 'auto',
   },
   messageCount: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
   deleteButton: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: -4,
+    marginBottom: -4,
   },
   emptyState: {
     flex: 1,

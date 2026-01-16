@@ -423,9 +423,12 @@ export const VercelBadge: React.FC<VercelBadgeProps> = ({
 };
 
 // Vercel Agent Card Component
-interface VercelAgentCardProps extends BaseComponentProps {
+interface VercelAgentCardProps {
+  isDarkMode: boolean;
   agent: Agent;
   onPress: (agent: Agent) => void;
+  style?: any;
+  variant?: 'standard' | 'featured';
 }
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -436,30 +439,45 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
   agent,
   onPress,
   style,
+  variant = 'standard',
 }) => {
   const colors = getVercelColors(isDarkMode);
   const hasGradient = agent.gradientColors && agent.gradientColors.length >= 2;
+  const isFeatured = variant === 'featured';
 
   const CardContent = (
-    <View style={styles.agentCardInner}>
+    <View style={[
+      styles.agentCardInner,
+      isFeatured && styles.agentCardInnerFeatured
+    ]}>
       {/* Left side: Icon + Name + Description */}
-      <View style={styles.agentCardLeft}>
+      <View style={[
+        styles.agentCardLeft,
+        isFeatured && styles.agentCardLeftFeatured
+      ]}>
         <View style={[
           styles.agentIconCompact,
+          isFeatured && styles.agentIconFeatured,
           { backgroundColor: hasGradient ? 'rgba(255,255,255,0.2)' : colors.surfaceActive },
         ]}>
           <Text style={[
             styles.agentIconTextCompact,
+            isFeatured && styles.agentIconTextFeatured,
             { color: hasGradient ? '#FFFFFF' : colors.accent }
           ]}>
             {agent.name.charAt(0).toUpperCase()}
           </Text>
         </View>
 
-        <View style={styles.agentCardContent}>
+        <View style={[
+          styles.agentCardContent,
+          isFeatured && styles.agentCardContentFeatured
+        ]}>
           <Text style={[
             styles.agentNameCompact,
+            isFeatured && styles.agentNameFeatured,
             { color: hasGradient ? '#FFFFFF' : colors.textPrimary },
+            hasGradient && styles.textShadow,
           ]}
             numberOfLines={1}
           >
@@ -467,9 +485,11 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
           </Text>
           <Text style={[
             styles.agentDescriptionCompact,
-            { color: hasGradient ? 'rgba(255,255,255,0.8)' : colors.textSecondary },
+            isFeatured && styles.agentDescriptionFeatured,
+            { color: hasGradient ? 'rgba(255,255,255,0.9)' : colors.textSecondary },
+            hasGradient && styles.textShadow,
           ]}
-            numberOfLines={1}
+            numberOfLines={isFeatured ? 2 : 1}
             ellipsizeMode="tail"
           >
             {agent.description}
@@ -478,11 +498,13 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
       </View>
 
       {/* Right side: Arrow Icon */}
-      <MaterialCommunityIcons
-        name="chevron-right"
-        size={24}
-        color={hasGradient ? '#FFFFFF' : colors.textTertiary}
-      />
+      <View style={isFeatured ? styles.arrowIconFeaturedContainer : null}>
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={isFeatured ? 20 : 24}
+          color={hasGradient ? '#FFFFFF' : colors.textTertiary}
+        />
+      </View>
     </View>
   );
 
@@ -490,6 +512,7 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
     <TouchableOpacity
       style={[
         styles.agentCard,
+        isFeatured && styles.agentCardFeatured,
         !hasGradient && {
           backgroundColor: colors.surface,
           borderColor: colors.border,
@@ -501,10 +524,13 @@ export const VercelAgentCard: React.FC<VercelAgentCardProps> = ({
     >
       {hasGradient ? (
         <LinearGradient
-          colors={agent.gradientColors!}
+          colors={agent.gradientColors as unknown as readonly [string, string, ...string[]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.gradientContainer}
+          style={[
+            styles.gradientContainer,
+            isFeatured && styles.gradientContainerFeatured
+          ]}
         >
           {CardContent}
         </LinearGradient>
@@ -593,11 +619,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     height: 80,
   },
+  agentCardFeatured: {
+    height: 120,
+  },
   gradientContainer: {
     padding: VERCEL_SPACING.md,
     width: '100%',
     height: 80,
     justifyContent: 'center',
+  },
+  gradientContainerFeatured: {
+    height: 120,
   },
   agentCardInner: {
     flexDirection: 'row',
@@ -606,11 +638,25 @@ const styles = StyleSheet.create({
     padding: VERCEL_SPACING.md,
     height: 80,
   },
+  agentCardInnerFeatured: {
+    height: 120,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    padding: VERCEL_SPACING.sm,
+  },
   agentCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: VERCEL_SPACING.md,
     flex: 1,
+  },
+  agentCardLeftFeatured: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 6,
+    flex: 1,
+    width: '100%',
   },
   agentIconCompact: {
     width: 48,
@@ -619,25 +665,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  agentIconFeatured: {
+    width: 40, // Smaller icon for vertical layout to fit better
+    height: 40,
+    borderRadius: VERCEL_BORDER_RADIUS.sm,
+  },
   agentIconTextCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+  },
+  agentIconTextFeatured: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
   },
   agentCardContent: {
     flex: 1,
     gap: 2,
   },
+  agentCardContentFeatured: {
+    width: '100%',
+    gap: 1,
+  },
   agentNameCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.base,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.semibold,
+  },
+  agentNameFeatured: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm, // Slightly smaller to fit width
   },
   agentDescriptionCompact: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
+  agentDescriptionFeatured: {
+    fontSize: 11, // Tiny but readable for the grid
+    lineHeight: 14,
+  },
   arrowIconCompact: {
     fontSize: 20,
     fontWeight: '600',
     marginLeft: VERCEL_SPACING.sm,
+  },
+  arrowIconFeaturedContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  textShadow: {
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

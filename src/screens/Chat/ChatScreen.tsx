@@ -1,6 +1,7 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Dimensions, FlatList, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ChatInput } from '../../components';
 import { VercelMessageBubble, VercelTypingIndicator } from '../../components/vercel/VercelChatComponents';
 import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
@@ -25,6 +26,7 @@ export function ChatScreen() {
     createSession,
     setCurrentSession,
     addMessage,
+    deleteSession,
     sessions,
   } = useChatStore();
   const { isDarkMode } = useAppTheme();
@@ -83,20 +85,21 @@ export function ChatScreen() {
 
   // Dynamic container width for messages (wider on larger screens)
   const getContainerWidth = () => {
-    if (isSm) return '75%';
-    if (isMd) return '80%';
-    if (isLg) return '85%';
-    return '90%';
+    if (isSm) return '95%';
+    if (isMd) return '92%';
+    if (isLg) return '90%';
+    return '88%';
   };
 
   // Responsive message list padding
   const getMessagesPadding = () => {
-    if (isSm) return VERCEL_SPACING.sm;
-    if (isMd) return VERCEL_SPACING.md;
-    if (isLg) return VERCEL_SPACING.lg;
-    return VERCEL_SPACING.xl;
+    if (isSm) return VERCEL_SPACING.xs;
+    if (isMd) return VERCEL_SPACING.sm;
+    if (isLg) return VERCEL_SPACING.md;
+    return VERCEL_SPACING.lg;
   };
 
+  // Handle session initialization
   useEffect(() => {
     if (agentId) {
       if (sessionId) {
@@ -111,28 +114,59 @@ export function ChatScreen() {
         }
       }
     }
+  }, [agentId, sessionId, agents]);
 
+  // Handle header configuration
+  useEffect(() => {
     if (agent) {
       navigation.setOptions({
         headerTitle: agent.name,
         headerRight: () => (
-          <TouchableOpacity
-            onPress={() => {
-              const newAgent = agents.find((a) => a.id === agentId);
-              if (newAgent) {
-                createSession(newAgent);
-                setMessage('');
-                setSelectedImages([]);
-              }
-            }}
-            style={styles.newChatButton}
-          >
-            <Text style={{ color: colors.textSecondary, fontSize: 16 }}>➕</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              onPress={() => {
+                const sid = currentSession?.id;
+                const uid = user?.id;
+                if (!sid || !uid) return;
+
+                Alert.alert(
+                  'Delete Chat',
+                  'Are you sure you want to delete this conversation?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await deleteSession(sid, uid);
+                        navigation.navigate('Main', { screen: 'History' });
+                      }
+                    }
+                  ]
+                );
+              }}
+              style={styles.headerIconButton}
+            >
+              <MaterialCommunityIcons name="delete-outline" size={24} color={colors.error} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                const newAgent = agents.find((a) => a.id === agentId);
+                if (newAgent) {
+                  createSession(newAgent);
+                  setMessage('');
+                  setSelectedImages([]);
+                }
+              }}
+              style={styles.headerIconButton}
+            >
+              <MaterialCommunityIcons name="plus" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         ),
       });
     }
-  }, [agentId, sessionId, agents, agent, isDarkMode]);
+  }, [agent, colors, currentSession?.id, user?.id, navigation, agents, agentId, createSession, deleteSession]);
 
   const handleSend = useCallback(async () => {
     if (!message.trim() && selectedImages.length === 0) return;
@@ -159,24 +193,30 @@ export function ChatScreen() {
     setIsTyping(true);
 
     try {
-      let response = '';
+      let response: { text: string; imageUrl?: string };
+      const isImageGen = agent.category === 'image';
+
       if (selectedImages.length > 0) {
         response = await generateResponse(
           message.trim(),
           agent.systemPrompt,
-          selectedImages[0].base64
+          selectedImages[0].base64,
+          isImageGen
         );
       } else {
         response = await generateResponse(
           message.trim(),
-          agent.systemPrompt
+          agent.systemPrompt,
+          undefined,
+          isImageGen
         );
       }
 
       const aiMessage: Message = {
         id: `${Date.now()}-ai`,
         role: 'assistant',
-        content: response,
+        content: response.text,
+        imageUrl: response.imageUrl,
         timestamp: Date.now(),
       };
 
@@ -276,7 +316,7 @@ export function ChatScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.messagesList, {
             padding: getMessagesPadding(),
-            paddingBottom: isSm ? VERCEL_SPACING.sm : VERCEL_SPACING.md,
+            paddingBottom: isSm ? VERCEL_SPACING.xs : VERCEL_SPACING.sm,
             maxWidth: isXl ? VERCEL_LAYOUT.breakpoints.xl : isLg ? VERCEL_LAYOUT.breakpoints.lg : '100%',
           }]}
           showsVerticalScrollIndicator={false}
@@ -338,11 +378,17 @@ const styles = StyleSheet.create({
     height: 40,
     padding: VERCEL_SPACING.sm,
   },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: VERCEL_SPACING.xl,
+    padding: VERCEL_SPACING.lg,
   },
   emptyIcon: {
     width: 80,

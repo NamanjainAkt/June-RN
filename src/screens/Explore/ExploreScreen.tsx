@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
@@ -29,14 +30,23 @@ export function ExploreScreen() {
 
   // Animation for the Create Agent button border
   const rotation = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   React.useEffect(() => {
-    rotation.value = withRepeat(withTiming(360, { duration: 3000 }), -1, false);
+    rotation.value = withRepeat(withTiming(360, { duration: 2500 }), -1, false);
+    scale.value = withRepeat(
+      withTiming(1.05, { duration: 1500 }),
+      -1,
+      true
+    );
   }, []);
 
   const animatedBorderStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ rotate: `${rotation.value}deg` }],
+      transform: [
+        { rotate: `${rotation.value}deg` },
+        { scale: scale.value }
+      ],
     };
   });
 
@@ -127,7 +137,7 @@ export function ExploreScreen() {
               style={[styles.clearButton, { backgroundColor: colors.surfaceActive }]}
               onPress={clearSearch}
             >
-              <Text style={{ color: colors.textPrimary, fontSize: 16 }}>✕</Text>
+              <MaterialCommunityIcons name="close" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
           ) : (
             <View style={[styles.searchIcon, { backgroundColor: colors.surfaceActive }]}>
@@ -194,13 +204,15 @@ export function ExploreScreen() {
                 <View style={styles.borderAnimationWrapper}>
                   <Animated.View style={[styles.animatedBorder, animatedBorderStyle]}>
                     <LinearGradient
-                      colors={[colors.accent, '#FF0080', colors.accent]}
+                      colors={[colors.accent, '#FF0080', '#50E3C2', colors.accent]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
                       style={styles.fullSize}
                     />
                   </Animated.View>
                 </View>
                 <Text style={[styles.createButtonText, { color: colors.textPrimary }]}>
-                  ✨ Create New Agent
+                  <MaterialCommunityIcons name="auto-fix" size={18} color={colors.textPrimary} /> Create New Agent
                 </Text>
               </View>
             </TouchableOpacity>
@@ -228,9 +240,7 @@ export function ExploreScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyIcon, { color: colors.textTertiary }]}>
-              🔍
-            </Text>
+            <MaterialCommunityIcons name="magnify" size={64} color={colors.textTertiary} style={{ marginBottom: VERCEL_SPACING.lg }} />
             <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
               No agents found
             </Text>

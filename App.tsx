@@ -9,6 +9,7 @@ import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useEffect } from 'react';
+import { View } from 'react-native';
 import { Provider as PaperProvider, configureFonts } from 'react-native-paper';
 import { LoadingScreen } from './src/components/LoadingScreen';
 import { VERCEL_BORDER_RADIUS, VERCEL_COLORS, VERCEL_TYPOGRAPHY } from './src/constants/vercel-theme';
@@ -20,6 +21,7 @@ import { ExploreScreen } from './src/screens/Explore/ExploreScreen';
 import { HistoryScreen } from './src/screens/History/HistoryScreen';
 import { HomeScreen } from './src/screens/Home/HomeScreen';
 import { SettingsScreen } from './src/screens/Settings/SettingsScreen';
+import { VoiceAgentScreen } from './src/screens/Voice/VoiceAgentScreen';
 import { useAuthStore } from './src/store/useAuthStore';
 import { useChatStore } from './src/store/useChatStore';
 
@@ -42,6 +44,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICON: Record<string, any> = {
   Home: 'home',
   Explore: 'compass',
+  Voice: 'microphone',
   History: 'history',
   Settings: 'cog',
 };
@@ -80,6 +83,37 @@ function MainTabs() {
         name="Explore"
         component={ExploreScreen}
         options={{ title: 'Explore', headerShown: false }}
+      />
+      <Tab.Screen
+        name="Voice"
+        component={VoiceAgentScreen}
+        options={{
+          title: 'Voice',
+          headerShown: false,
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={{
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              backgroundColor: focused ? colors.accent : colors.surfaceActive,
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 15, // Lift the center button
+              elevation: 5,
+              shadowColor: colors.accent,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+            }}>
+              <MaterialCommunityIcons
+                name="microphone"
+                size={28}
+                color={focused ? "#FFFFFF" : color}
+              />
+            </View>
+          ),
+          tabBarLabel: () => null,
+        }}
       />
       <Tab.Screen
         name="History"
@@ -231,7 +265,7 @@ function RootNavigation() {
               }}
             />
             <Stack.Screen
-              name="CustomAgent"
+              name="CreateAgent"
               component={CreateAgentScreen}
               options={{
                 headerShown: true,
@@ -241,6 +275,15 @@ function RootNavigation() {
                   backgroundColor: colors.background,
                 },
                 headerTintColor: colors.textPrimary,
+              }}
+            />
+            <Stack.Screen
+              name="Voice"
+              component={VoiceAgentScreen}
+              options={{
+                headerShown: false,
+                presentation: 'modal',
+                animation: 'slide_from_bottom'
               }}
             />
           </>

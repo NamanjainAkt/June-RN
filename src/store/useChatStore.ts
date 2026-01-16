@@ -21,6 +21,7 @@ interface ChatState {
   saveSessions: (userId: string) => Promise<void>;
   loadSessions: (userId: string) => Promise<void>;
   deleteSession: (sessionId: string, userId: string) => Promise<void>;
+  clearAllSessions: (userId: string) => Promise<void>;
 
   // Agent methods
   loadAgents: (userId: string) => Promise<void>;
@@ -91,7 +92,9 @@ export const useChatStore = create<ChatState>()(
           const sessions = get().sessions;
           for (const session of sessions) {
             const sessionRef = doc(db, 'users', userId, 'sessions', session.id);
-            await setDoc(sessionRef, session);
+            // Sanitize session to remove undefined values for Firestore
+            const sanitizedSession = JSON.parse(JSON.stringify(session));
+            await setDoc(sessionRef, sanitizedSession);
           }
         } catch (error) {
           console.error('Error saving sessions to Firestore:', error);
@@ -135,6 +138,22 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
+      clearAllSessions: async (userId) => {
+        if (!db) {
+          set({ sessions: [], currentSession: null });
+          return;
+        }
+        try {
+          const sessions = get().sessions;
+          for (const session of sessions) {
+            await deleteDoc(doc(db, 'users', userId, 'sessions', session.id));
+          }
+          set({ sessions: [], currentSession: null });
+        } catch (error) {
+          console.error('Error clearing all sessions:', error);
+        }
+      },
+
       loadAgents: async (userId) => {
         set({ isLoading: true });
         try {
@@ -164,7 +183,8 @@ export const useChatStore = create<ChatState>()(
         const userId = useAuthStore.getState().user?.id;
         if (userId && db) {
           try {
-            await setDoc(doc(db, 'users', userId, 'customAgents', agent.id), agent);
+            const sanitizedAgent = JSON.parse(JSON.stringify(agent));
+            await setDoc(doc(db, 'users', userId, 'customAgents', agent.id), sanitizedAgent);
           } catch (error) {
             console.error('Error saving custom agent to Firestore:', error);
           }

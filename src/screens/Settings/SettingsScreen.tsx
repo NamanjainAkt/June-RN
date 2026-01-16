@@ -1,16 +1,73 @@
 import { useAuth } from '@clerk/clerk-expo';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
-import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
+  Divider,
   Switch
 } from 'react-native-paper';
 import { VercelAvatar, VercelButton, VercelCard } from '../../components/vercel/VercelComponents';
-import { MOBILE_SPACING } from '../../constants/mobile-design-tokens';
-import { VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
+import { VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { useAppTheme, useFontSize } from '../../hooks';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useThemeStore } from '../../store/useThemeStore';
+
+interface SettingItemProps {
+  icon: string;
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  showSwitch?: boolean;
+  switchValue?: boolean;
+  onSwitchChange?: (val: boolean) => void;
+  color?: string;
+  isDarkMode: boolean;
+}
+
+const SettingItem: React.FC<SettingItemProps> = ({
+  icon,
+  label,
+  value,
+  onPress,
+  showSwitch,
+  switchValue,
+  onSwitchChange,
+  color,
+  isDarkMode
+}) => {
+  const { colors } = useAppTheme();
+
+  return (
+    <TouchableOpacity
+      style={styles.settingRow}
+      onPress={onPress}
+      disabled={showSwitch || !onPress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.settingLabelContainer}>
+        <View style={[styles.settingIconContainer, { backgroundColor: color ? `${color}20` : colors.surfaceActive }]}>
+          <MaterialCommunityIcons name={icon as any} size={20} color={color || colors.textPrimary} />
+        </View>
+        <Text style={[styles.settingLabel, { color: colors.textPrimary }]}>{label}</Text>
+      </View>
+
+      <View style={styles.settingValueContainer}>
+        {value && <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>}
+        {showSwitch && (
+          <Switch
+            value={switchValue}
+            onValueChange={onSwitchChange}
+            color={colors.accent}
+          />
+        )}
+        {!showSwitch && onPress && (
+          <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
@@ -20,35 +77,13 @@ export function SettingsScreen() {
   const { colors, typography } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
-  // Responsive configuration using all breakpoints
+  // Mock states for additional settings
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [autoSave, setAutoSave] = useState(true);
+
+  // Responsive configuration
   const screenWidth = Dimensions.get('window').width;
   const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md;
-  const isMd = screenWidth >= VERCEL_LAYOUT.breakpoints.md && screenWidth < VERCEL_LAYOUT.breakpoints.lg;
-  const isLg = screenWidth >= VERCEL_LAYOUT.breakpoints.lg && screenWidth < VERCEL_LAYOUT.breakpoints.xl;
-  const isXl = screenWidth >= VERCEL_LAYOUT.breakpoints.xl;
-
-  // Dynamic avatar size
-  const getAvatarSize = () => {
-    if (isXl) return 80;
-    if (isLg) return 72;
-    if (isMd) return 68;
-    return 64;
-  };
-
-  // Responsive padding
-  const getContentPadding = () => {
-    if (isSm) return VERCEL_SPACING.md;
-    if (isMd) return VERCEL_SPACING.lg;
-    if (isLg) return VERCEL_SPACING.xl;
-    return VERCEL_SPACING['2xl'];
-  };
-
-  // Dynamic font sizes
-  const getTitleSize = () => {
-    if (isXl) return VERCEL_TYPOGRAPHY.sizes.xl;
-    if (isLg) return VERCEL_TYPOGRAPHY.sizes.lg;
-    return VERCEL_TYPOGRAPHY.sizes.base;
-  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -61,14 +96,10 @@ export function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear Clerk session first
               await signOut();
-              // Clear Zustand store
               logout();
-              // Navigation will automatically update based on auth state change
             } catch (error) {
               console.error('Logout error:', error);
-              // Fallback: still try to clear store on error
               logout();
             }
           },
@@ -85,49 +116,112 @@ export function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.content, { padding: getContentPadding() }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile Section */}
         <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.profileCard} variant='elevated'>
           <View style={styles.profileInfo}>
             <VercelAvatar
               name={user?.name || 'Guest'}
-              imageUrl={user?.imageUrl}
               size="lg"
               isDarkMode={themeSettings.mode === 'dark'}
             />
             <View style={styles.profileText}>
-              <Text style={{ fontSize: getTitleSize(), fontFamily: typography.fontFamily.bold, color: colors.textPrimary }}>
+              <Text style={[styles.profileName, { color: colors.textPrimary }]}>
                 {user?.name || 'Guest User'}
               </Text>
-              <Text style={{ fontSize: isSm ? typography.sizes.sm : typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
+              <Text style={[styles.profileEmail, { color: colors.textSecondary }]}>
                 {user?.email || 'guest@example.com'}
               </Text>
+              <View style={[styles.planBadge, { backgroundColor: colors.accent + '20' }]}>
+                <Text style={[styles.planText, { color: colors.accent }]}>Free Plan</Text>
+              </View>
             </View>
           </View>
         </VercelCard>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary }}>
-          Appearance
-        </Text>
-
+        {/* Appearance Section */}
+        <Text style={styles.sectionHeader}>Appearance</Text>
         <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
-          <View style={styles.settingRow}>
-            <Text style={{ fontSize: typography.sizes.base, fontFamily: typography.fontFamily.regular, color: colors.textPrimary }}>
-              Dark Mode
-            </Text>
-            <Switch
-              value={themeSettings.mode === 'dark'}
-              onValueChange={toggleTheme}
-              color={colors.accent}
-            />
-          </View>
+          <SettingItem
+            icon="brightness-4"
+            label="Dark Mode"
+            showSwitch
+            switchValue={themeSettings.mode === 'dark'}
+            onSwitchChange={toggleTheme}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#9333ea"
+          />
+          <Divider style={{ backgroundColor: colors.border }} />
+          <SettingItem
+            icon="format-size"
+            label="Font Size"
+            value={fontSize.toString()}
+            onPress={() => {
+              Alert.alert(
+                'Font Size',
+                'Adjust the text size for better readability.',
+                [
+                  { text: 'Smaller', onPress: decreaseFontSize },
+                  { text: 'Reset', onPress: () => { } },
+                  { text: 'Larger', onPress: increaseFontSize },
+                ]
+              );
+            }}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#3b82f6"
+          />
         </VercelCard>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.medium, color: colors.textSecondary, marginTop: MOBILE_SPACING.md }}>
-          Account
-        </Text>
+        {/* AI Preferences Section */}
+        <Text style={styles.sectionHeader}>AI Preferences</Text>
+        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
+          <SettingItem
+            icon="history"
+            label="Auto-save History"
+            showSwitch
+            switchValue={autoSave}
+            onSwitchChange={setAutoSave}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#f59e0b"
+          />
+          <Divider style={{ backgroundColor: colors.border }} />
+          <SettingItem
+            icon="microphone"
+            label="Voice Agent"
+            onPress={() => navigation.navigate('Voice')}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#ec4899"
+          />
+        </VercelCard>
+
+        {/* General Section */}
+        <Text style={styles.sectionHeader}>General</Text>
+        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
+          <SettingItem
+            icon="vibrate"
+            label="Haptic Feedback"
+            showSwitch
+            switchValue={hapticsEnabled}
+            onSwitchChange={setHapticsEnabled}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#ec4899"
+          />
+          <Divider style={{ backgroundColor: colors.border }} />
+          <SettingItem
+            icon="database-outline"
+            label="Clear Cache"
+            onPress={() => Alert.alert('Clear Cache', 'Cache cleared successfully!')}
+            isDarkMode={themeSettings.mode === 'dark'}
+            color="#ef4444"
+          />
+        </VercelCard>
 
 
-
+        {/* Logout */}
         <View style={styles.logoutContainer}>
           <VercelButton
             variant="danger"
@@ -139,10 +233,13 @@ export function SettingsScreen() {
           />
         </View>
 
-        <Text style={{ fontSize: typography.sizes.sm, fontFamily: typography.fontFamily.regular, color: colors.textSecondary }}>
-          June AI v1.0.0
-        </Text>
-      </View>
+        {/* Footer Credit */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, { color: colors.textTertiary }]}>
+            Made with <MaterialCommunityIcons name="heart" size={14} color="#ef4444" /> by June Team
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -151,58 +248,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: '6%',
-  },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 16,
+  },
+  scrollContent: {
+    padding: VERCEL_SPACING.lg,
+    paddingBottom: VERCEL_SPACING['2xl'],
   },
   profileCard: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: VERCEL_SPACING.lg,
+    borderRadius: VERCEL_BORDER_RADIUS.lg,
+    marginBottom: VERCEL_SPACING.xl,
   },
   profileInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   profileText: {
-    marginLeft: 16,
+    marginLeft: VERCEL_SPACING.lg,
+    flex: 1,
   },
-  sectionTitle: {
+  profileName: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xl,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+  },
+  profileEmail: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+    marginTop: 2,
+  },
+  planBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
     marginTop: 8,
-    marginBottom: 8,
+  },
+  planText: {
+    fontSize: 10,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    textTransform: 'uppercase',
+  },
+  sectionHeader: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+    color: '#a1a1aa',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: VERCEL_SPACING.sm,
+    marginLeft: 4,
   },
   settingCard: {
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: VERCEL_BORDER_RADIUS.lg,
+    marginBottom: VERCEL_SPACING.xl,
     overflow: 'hidden',
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: VERCEL_SPACING.lg,
   },
-  divider: {
-    marginHorizontal: 16,
-  },
-  fontSizeControls: {
+  settingLabelContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: VERCEL_SPACING.md,
+  },
+  settingIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingLabel: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.base,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
+  },
+  settingValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: VERCEL_SPACING.xs,
+  },
+  settingValue: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.sm,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
   logoutContainer: {
-    marginTop: 24,
+    marginTop: VERCEL_SPACING.sm,
   },
-  logoutButton: {
-    borderColor: 'transparent',
+  footer: {
+    marginTop: VERCEL_SPACING['2xl'],
+    alignItems: 'center',
+    paddingBottom: VERCEL_SPACING.lg,
   },
-  version: {
-    textAlign: 'center',
-    marginTop: 24,
+  footerText: {
+    fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+    fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
 });

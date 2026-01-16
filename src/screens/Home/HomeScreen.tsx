@@ -95,6 +95,7 @@ export function HomeScreen() {
                   <VercelAgentCard
                     isDarkMode={isDarkMode}
                     agent={agent}
+                    variant="featured"
                     onPress={(a) => navigation.navigate('Chat', { agentId: a.id })}
                   />
                 </View>
