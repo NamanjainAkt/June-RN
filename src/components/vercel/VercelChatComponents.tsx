@@ -2,8 +2,11 @@
 // Clean, Professional Chat Interface
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { cacheDirectory, downloadAsync, EncodingType, writeAsStringAsync } from 'expo-file-system';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Clipboard, Dimensions, Image, TextInput as RNTextInput, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Clipboard, Dimensions, DimensionValue, Image, TextInput as RNTextInput, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { useAppTheme } from '../../hooks';
 import { Message } from '../../types';
@@ -18,7 +21,7 @@ interface VercelMessageBubbleProps {
   onRetry?: (message: Message) => void;
   onDelete?: (messageId: string) => void;
   sendStatus?: 'sending' | 'sent' | 'error';
-  containerWidth?: `${number}%`;
+  containerWidth?: DimensionValue;
   breakpoint?: {
     isSm: boolean;
     isMd: boolean;
@@ -37,7 +40,7 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
   sendStatus,
   containerWidth = '92%',
   breakpoint = { isSm: false, isMd: false, isLg: false, isXl: false },
-}) => {
+}: VercelMessageBubbleProps) => {
   const { colors } = useAppTheme();
   const { width } = Dimensions.get('window');
   const { isSm, isMd, isLg, isXl } = breakpoint;
@@ -97,6 +100,88 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
     if (onDelete) {
       onDelete(message.id);
       setShowActions(false);
+    }
+  };
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadImage = async () => {
+    if (!message.imageUrl) return;
+
+    try {
+      setIsDownloading(true);
+
+      // Request permissions
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'I need permission to save images to your gallery.');
+        setIsDownloading(false);
+        return;
+      }
+
+      const imageUrl = message.imageUrl;
+      let fileUri = '';
+
+      if (imageUrl.startsWith('data:')) {
+        // Handle Base64
+        const base64Data = imageUrl.split('base64,')[1];
+        const extension = imageUrl.split(';')[0].split('/')[1] || 'png';
+        const filename = `june_image_${Date.now()}.${extension}`;
+        fileUri = `${cacheDirectory}${filename}`;
+
+        await writeAsStringAsync(fileUri, base64Data, {
+          encoding: EncodingType.Base64,
+        });
+      } else {
+        // Handle regular URL
+        const extension = imageUrl.split('.').pop()?.split('?')[0] || 'jpg';
+        const filename = `june_image_${Date.now()}.${extension}`;
+        fileUri = `${cacheDirectory}${filename}`;
+
+        await downloadAsync(imageUrl, fileUri);
+      }
+
+      // Save to library
+      await MediaLibrary.saveToLibraryAsync(fileUri);
+
+      Alert.alert('Success', 'Image saved to your gallery!');
+    } catch (error) {
+      console.error('Download error:', error);
+
+      // Fallback to sharing if save fails
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        Alert.alert(
+          'Save Failed',
+          'Could not save to gallery directly. Would you like to share/save it manually?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Share',
+              onPress: async () => {
+                try {
+                  const tempUri = `${cacheDirectory}shared_image.png`;
+                  if (message.imageUrl?.startsWith('data:')) {
+                    const base64Data = message.imageUrl.split('base64,')[1];
+                    await writeAsStringAsync(tempUri, base64Data, {
+                      encoding: EncodingType.Base64,
+                    });
+                  } else {
+                    await downloadAsync(message.imageUrl!, tempUri);
+                  }
+                  await Sharing.shareAsync(tempUri);
+                } catch (e) {
+                  Alert.alert('Error', 'Could not share the image.');
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to save image.');
+      }
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -217,6 +302,21 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
               style={styles.messageImage}
               resizeMode="cover"
             />
+
+            {/* Download/Save Button Overlay */}
+            {!isUser && (
+              <TouchableOpacity
+                style={[styles.downloadButton, { backgroundColor: 'rgba(0,0,0,0.5)' }]}
+                onPress={handleDownloadImage}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <MaterialCommunityIcons name="download" size={20} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -306,7 +406,7 @@ export const VercelChatInput: React.FC<VercelChatInputProps> = ({
   onAttachImage,
   isLoading = false,
   placeholder = "Ask anything...",
-}) => {
+}: VercelChatInputProps) => {
   const { colors } = useAppTheme();
   const textInputRef = React.useRef<RNTextInput>(null);
   const [inputHeight, setInputHeight] = React.useState(VERCEL_LAYOUT.components.inputHeight - VERCEL_SPACING.xs * 2);
@@ -409,7 +509,7 @@ export const VercelTypingIndicator: React.FC<VercelTypingIndicatorProps> = ({
   isDarkMode,
   agentName,
   breakpoint = { isSm: false, isMd: false, isLg: false, isXl: false },
-}) => {
+}: VercelTypingIndicatorProps) => {
   const { colors } = useAppTheme();
   const { isSm, isMd, isLg, isXl } = breakpoint;
 
@@ -501,7 +601,7 @@ export const VercelChatHeader: React.FC<VercelChatHeaderProps> = ({
   agentDescription,
   onBack,
   onNewChat,
-}) => {
+}: VercelChatHeaderProps) => {
   const { colors } = useAppTheme();
 
   return (
@@ -552,7 +652,7 @@ export const VercelEmptyState: React.FC<VercelEmptyStateProps> = ({
   isDarkMode,
   agentName,
   agentDescription,
-}) => {
+}: VercelEmptyStateProps) => {
   const { colors } = useAppTheme();
 
   return (
@@ -674,6 +774,14 @@ const styles = StyleSheet.create({
   messageImage: {
     width: '100%',
     height: '100%',
+  },
+  downloadButton: {
+    position: 'absolute',
+    top: VERCEL_SPACING.xs,
+    right: VERCEL_SPACING.xs,
+    padding: VERCEL_SPACING.xs,
+    borderRadius: VERCEL_BORDER_RADIUS.sm,
+    backdropFilter: 'blur(10px)',
   },
   messageAgentName: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.xs,

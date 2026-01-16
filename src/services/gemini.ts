@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
-import { generateEnhancedImagePrompt } from './perplexity';
 
-const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
+const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+console.log('🔑 Gemini API Key:', GEMINI_KEY.substring(0, 8) + '...');
+const genAI = new GoogleGenerativeAI(GEMINI_KEY);
 
 const SAFETY_SETTINGS = [
   {
@@ -23,7 +24,7 @@ const SAFETY_SETTINGS = [
 ];
 
 const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
-const TEXT_MODEL_NAME = 'gemini-2.5-flash';
+const TEXT_MODEL_NAME = 'gemma-3-27b';
 
 export async function generateResponse(
   prompt: string,
@@ -82,31 +83,54 @@ export async function generateResponse(
       });
     }
 
+    if (isImageGeneration) {
+      try {
+        console.log('🖼️ Attempting Gemini image generation...');
+        const result = await model.generateContent({
+          contents,
+          generationConfig,
+        });
+
+        const response = result.response;
+        const text = response.text();
+
+        console.log('🖼️ Gemini response received, checking for image data...');
+
+        const imagePart = response.candidates?.[0]?.content?.parts?.find(
+          (part: any) => part.inlineData?.mimeType?.startsWith('image/')
+        );
+
+        if (imagePart?.inlineData) {
+          const imageBase64 = imagePart.inlineData.data;
+          const mimeType = imagePart.inlineData.mimeType || 'image/png';
+          return {
+            text: `I've generated this image using Gemini. \n\n**Prompt:** "${text}"`,
+            imageUrl: `data:${mimeType};base64,${imageBase64}`
+          };
+        }
+
+        throw new Error('No image data in Gemini response');
+      } catch (err: any) {
+        console.warn('⚠️ Gemini Image failed, falling back to Pollinations:', err.message);
+
+        // Fallback to Pollinations.ai
+        const seed = Math.floor(Math.random() * 1000000);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
+
+        return {
+          text: `Gemini is currently at its limit, so I've used our high-speed backup engine to create this for you. \n\n**Prompt:** "${prompt}"`,
+          imageUrl
+        };
+      }
+    }
+
     const result = await model.generateContent({
       contents,
       generationConfig,
     });
 
     const response = result.response;
-
-    if (!response.text()) {
-      throw new Error('Empty response from API');
-    }
-
     const text = response.text();
-
-    if (isImageGeneration) {
-      // Use Perplexity to enhance the prompt for the final image renderer
-      const enhancedPrompt = await generateEnhancedImagePrompt(text);
-
-      const seed = Math.floor(Math.random() * 1000000);
-      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
-
-      return {
-        text: `I've used Perplexity to craft a high-fidelity vision of your request. \n\n**Generated for:** "${text}"`,
-        imageUrl
-      };
-    }
 
     return { text };
   } catch (error: any) {

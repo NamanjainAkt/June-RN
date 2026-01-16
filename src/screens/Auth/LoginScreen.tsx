@@ -1,17 +1,16 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { useAppTheme } from '../../hooks';
-import { VERCEL_SPACING, VERCEL_TYPOGRAPHY, VERCEL_BORDER_RADIUS } from '../../constants/vercel-theme';
 import { Button } from '../../components';
+import { VERCEL_SPACING } from '../../constants/vercel-theme';
+import { useAppTheme } from '../../hooks';
 
 interface LoginScreenProps {
   onGoogleLogin: () => void;
-  onDemoLogin: () => void;
   isLoading: boolean;
 }
 
-export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScreenProps) {
+export function LoginScreen({ onGoogleLogin, isLoading }: LoginScreenProps) {
   const { colors, typography, spacing, isDarkMode } = useAppTheme();
 
   return (
@@ -24,7 +23,7 @@ export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScre
           </Text>
         </View>
 
-        <Text style={[styles.title, { 
+        <Text style={[styles.title, {
           color: colors.textPrimary,
           fontFamily: typography.fontFamily.bold,
           fontSize: typography.sizes['3xl'],
@@ -32,7 +31,7 @@ export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScre
           June AI
         </Text>
 
-        <Text style={[styles.subtitle, { 
+        <Text style={[styles.subtitle, {
           color: colors.textSecondary,
           fontFamily: typography.fontFamily.regular,
           fontSize: typography.sizes.base,
@@ -52,33 +51,10 @@ export function LoginScreen({ onGoogleLogin, onDemoLogin, isLoading }: LoginScre
           >
             {isLoading ? 'Signing in...' : 'Continue with Google'}
           </Button>
-
-          <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { 
-              color: colors.textTertiary,
-              fontFamily: typography.fontFamily.medium,
-              fontSize: typography.sizes.sm,
-            }]}>
-              or
-            </Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
-          <Button
-            variant="outlined"
-            size="lg"
-            onPress={onDemoLogin}
-            style={styles.demoButton}
-            fullWidth
-            isDarkMode={isDarkMode}
-          >
-            Try Demo Mode
-          </Button>
         </View>
 
         {/* Footer */}
-        <Text style={[styles.disclaimer, { 
+        <Text style={[styles.disclaimer, {
           color: colors.textTertiary,
           fontFamily: typography.fontFamily.regular,
           fontSize: typography.sizes.xs,
