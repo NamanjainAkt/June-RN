@@ -24,7 +24,7 @@ const SAFETY_SETTINGS = [
 ];
 
 const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
-const TEXT_MODEL_NAME = 'gemma-3-27b';
+const TEXT_MODEL_NAME = 'gemini-2.0-flash-lite';
 
 export async function generateResponse(
   prompt: string,
