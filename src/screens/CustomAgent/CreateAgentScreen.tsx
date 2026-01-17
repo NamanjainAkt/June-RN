@@ -80,7 +80,7 @@ export function CreateAgentScreen() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<AgentCategory>('custom');
   const [systemPrompt, setSystemPrompt] = useState('');
-  const [selectedGradient, setSelectedGradient] = useState<string[]>(GRADIENT_PRESETS[0]);
+  const [selectedGradient, setSelectedGradient] = useState<readonly [string, string]>(GRADIENT_PRESETS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -141,7 +141,7 @@ export function CreateAgentScreen() {
         systemPrompt: systemPrompt.trim(),
         isCustom: true,
         createdAt: Date.now(),
-        gradientColors: selectedGradient,
+        gradientColors: selectedGradient as readonly string[],
       };
 
       await addCustomAgent(newAgent);
@@ -220,7 +220,7 @@ export function CreateAgentScreen() {
                   category: 'custom',
                   icon: 'star',
                   systemPrompt: '',
-                  gradientColors: selectedGradient
+                  gradientColors: selectedGradient as readonly string[]
                 }}
                 onPress={() => { }}
               />

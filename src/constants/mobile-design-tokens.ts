@@ -79,4 +79,4 @@ export const GRADIENT_PRESETS = [
     ['#00c853', '#B2FF59'], // Green/Lime
     ['#7928CA', '#FF0080'], // Purple/Pink
     ['#4CC9F0', '#4361EE'], // Sky/Blue
-];
+] as const;
