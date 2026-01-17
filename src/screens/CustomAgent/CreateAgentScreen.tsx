@@ -1,15 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import {
   Button,
   Chip,
   HelperText,
   IconButton,
-  Surface,
-  TextInput,
+  TextInput
 } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { VercelAgentCard } from '../../components/vercel/VercelComponents';
 import { CATEGORIES } from '../../constants/agents';
 import { GRADIENT_PRESETS } from '../../constants/mobile-design-tokens';
@@ -168,217 +168,228 @@ export function CreateAgentScreen() {
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      behavior="padding"
-      keyboardVerticalOffset={100}
-    >
-      <Surface style={styles.header} elevation={0}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={() => navigation.goBack()}
-          iconColor={colors.textPrimary}
-        />
-        <Text style={[typographyStyles.headlineMedium, { color: colors.textPrimary }]}>
-          Create Custom Agent
-        </Text>
-      </Surface>
-
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <Text style={[typographyStyles.bodyMedium, { color: colors.textSecondary }]}>
-          Create a personalized AI agent tailored to your specific needs
-        </Text>
-
-        <View style={styles.form}>
-          {/* Live Preview */}
-          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
-            Agent Preview
-          </Text>
-          <View style={styles.previewContainer}>
-            <VercelAgentCard
-              isDarkMode={isDarkMode}
-              agent={{
-                id: 'preview',
-                name: name || 'Agent Name',
-                description: description || 'Agent Description',
-                category: 'custom',
-                icon: 'star',
-                systemPrompt: '',
-                gradientColors: selectedGradient
-              }}
-              onPress={() => { }}
-            />
-          </View>
-
-          {/* Gradient Selector */}
-          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
-            Background Style
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.gradientList}
-          >
-            {GRADIENT_PRESETS.map((grad, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setSelectedGradient(grad)}
-                style={[
-                  styles.gradientOption,
-                  selectedGradient === grad && { borderColor: colors.accent, borderWidth: 2 }
-                ]}
-              >
-                <LinearGradient
-                  colors={grad}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.gradientCircle}
-                />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <TextInput
-            label="Agent Name"
-            value={name}
-            onChangeText={(text) => {
-              setName(text);
-              if (errors.name) {
-                setErrors({ ...errors, name: '' });
-              }
-            }}
-            style={[styles.input, { fontSize }]}
-            mode="outlined"
-            placeholder="e.g., Legal Document Assistant"
-            placeholderTextColor={colors.textSecondary}
-            error={!!errors.name}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.background,
+        }}>
+          <IconButton
+            icon="arrow-left"
+            size={24}
+            onPress={() => navigation.goBack()}
+            iconColor={colors.textPrimary}
+            style={{ margin: 0, marginRight: 8 }}
           />
-          {errors.name ? (
-            <HelperText type="error" style={{ fontSize: errorFontSize }}>
-              {errors.name}
-            </HelperText>
-          ) : null}
-
-          <TextInput
-            label="Description"
-            value={description}
-            onChangeText={(text) => {
-              setDescription(text);
-              if (errors.description) {
-                setErrors({ ...errors, description: '' });
-              }
-            }}
-            style={[styles.input, { fontSize }]}
-            mode="outlined"
-            placeholder="What does this agent do?"
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={2}
-            error={!!errors.description}
-          />
-          {errors.description ? (
-            <HelperText type="error" style={{ fontSize: errorFontSize }}>
-              {errors.description}
-            </HelperText>
-          ) : null}
-
-          <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
-            Category
+          <Text style={[typographyStyles.headlineMedium, { color: colors.textPrimary, fontSize: 20 }]}>
+            Create Custom Agent
           </Text>
-          <View style={styles.categories}>
-            {CATEGORIES.filter((c) => c.value !== 'custom').map((cat) => (
-              <Chip
-                key={cat.value}
-                selected={category === cat.value}
-                onPress={() => setCategory(cat.value)}
-                style={[
-                  styles.categoryChip,
-                  {
-                    backgroundColor:
-                      category === cat.value
-                        ? colors.surfaceActive
-                        : colors.surface,
-                  },
-                ]}
-                textStyle={{
-                  color:
-                    category === cat.value
-                      ? colors.accent
-                      : colors.textSecondary,
-                  fontSize: labelFontSize,
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={[typographyStyles.bodyMedium, { color: colors.textSecondary }]}>
+            Create a personalized AI agent tailored to your specific needs
+          </Text>
+
+          <View style={styles.form}>
+            {/* Live Preview */}
+            <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
+              Agent Preview
+            </Text>
+            <View style={styles.previewContainer}>
+              <VercelAgentCard
+                isDarkMode={isDarkMode}
+                agent={{
+                  id: 'preview',
+                  name: name || 'Agent Name',
+                  description: description || 'Agent Description',
+                  category: 'custom',
+                  icon: 'star',
+                  systemPrompt: '',
+                  gradientColors: selectedGradient
                 }}
-              >
-                {cat.label}
-              </Chip>
-            ))}
-          </View>
+                onPress={() => { }}
+              />
+            </View>
 
-          <TextInput
-            label="System Prompt"
-            value={systemPrompt}
-            onChangeText={(text) => {
-              setSystemPrompt(text);
-              if (errors.systemPrompt) {
-                setErrors({ ...errors, systemPrompt: '' });
-              }
-            }}
-            style={[styles.input, styles.promptInput, { fontSize }]}
-            mode="outlined"
-            placeholder="Define how this agent should behave..."
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={6}
-            textAlignVertical="top"
-            error={!!errors.systemPrompt}
-          />
-          {errors.systemPrompt ? (
-            <HelperText type="error" style={{ fontSize: errorFontSize }}>
-              {errors.systemPrompt}
-            </HelperText>
-          ) : null}
-
-          <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
-            Prompt Templates
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.templatesRow}>
-              {PROMPT_TEMPLATES.map((template, index) => (
-                <Chip
+            {/* Gradient Selector */}
+            <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
+              Background Style
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.gradientList}
+            >
+              {GRADIENT_PRESETS.map((grad, index) => (
+                <TouchableOpacity
                   key={index}
-                  mode="outlined"
-                  onPress={() => applyTemplate(template)}
-                  style={styles.templateChip}
-                  textStyle={{ fontSize: errorFontSize }}
+                  onPress={() => setSelectedGradient(grad)}
+                  style={[
+                    styles.gradientOption,
+                    selectedGradient === grad && { borderColor: colors.accent, borderWidth: 2 }
+                  ]}
                 >
-                  {template.label}
+                  <LinearGradient
+                    colors={grad}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.gradientCircle}
+                  />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TextInput
+              label="Agent Name"
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (errors.name) {
+                  setErrors({ ...errors, name: '' });
+                }
+              }}
+              style={[styles.input, { fontSize }]}
+              mode="outlined"
+              placeholder="e.g., Legal Document Assistant"
+              placeholderTextColor={colors.textSecondary}
+              error={!!errors.name}
+            />
+            {errors.name ? (
+              <HelperText type="error" style={{ fontSize: errorFontSize }}>
+                {errors.name}
+              </HelperText>
+            ) : null}
+
+            <TextInput
+              label="Description"
+              value={description}
+              onChangeText={(text) => {
+                setDescription(text);
+                if (errors.description) {
+                  setErrors({ ...errors, description: '' });
+                }
+              }}
+              style={[styles.input, { fontSize }]}
+              mode="outlined"
+              placeholder="What does this agent do?"
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={2}
+              error={!!errors.description}
+            />
+            {errors.description ? (
+              <HelperText type="error" style={{ fontSize: errorFontSize }}>
+                {errors.description}
+              </HelperText>
+            ) : null}
+
+            <Text style={[styles.label, { color: colors.textPrimary, fontSize: labelFontSize }]}>
+              Category
+            </Text>
+            <View style={styles.categories}>
+              {CATEGORIES.filter((c) => c.value !== 'custom').map((cat) => (
+                <Chip
+                  key={cat.value}
+                  selected={category === cat.value}
+                  onPress={() => setCategory(cat.value)}
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor:
+                        category === cat.value
+                          ? colors.surfaceActive
+                          : colors.surface,
+                    },
+                  ]}
+                  textStyle={{
+                    color:
+                      category === cat.value
+                        ? colors.accent
+                        : colors.textSecondary,
+                    fontSize: labelFontSize,
+                  }}
+                >
+                  {cat.label}
                 </Chip>
               ))}
             </View>
-          </ScrollView>
 
-          <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
-            Be specific about the agent&apos;s role, expertise, and communication style
-          </Text>
+            <TextInput
+              label="System Prompt"
+              value={systemPrompt}
+              onChangeText={(text) => {
+                setSystemPrompt(text);
+                if (errors.systemPrompt) {
+                  setErrors({ ...errors, systemPrompt: '' });
+                }
+              }}
+              style={[styles.input, styles.promptInput, { fontSize }]}
+              mode="outlined"
+              placeholder="Define how this agent should behave..."
+              placeholderTextColor={colors.textSecondary}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+              error={!!errors.systemPrompt}
+            />
+            {errors.systemPrompt ? (
+              <HelperText type="error" style={{ fontSize: errorFontSize }}>
+                {errors.systemPrompt}
+              </HelperText>
+            ) : null}
 
-          <Button
-            mode="contained"
-            onPress={handleCreate}
-            disabled={!isFormValid || isLoading}
-            loading={isLoading}
-            style={styles.createButton}
-            contentStyle={{ paddingVertical: 4 }}
-          >
-            Create Agent
-          </Button>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
+              Prompt Templates
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.templatesRow}>
+                {PROMPT_TEMPLATES.map((template, index) => (
+                  <Chip
+                    key={index}
+                    mode="outlined"
+                    onPress={() => applyTemplate(template)}
+                    style={styles.templateChip}
+                    textStyle={{ fontSize: errorFontSize }}
+                  >
+                    {template.label}
+                  </Chip>
+                ))}
+              </View>
+            </ScrollView>
+
+            <Text style={[typographyStyles.bodySmall, { color: colors.textSecondary }]}>
+              Be specific about the agent&apos;s role, expertise, and communication style
+            </Text>
+
+            <Button
+              mode="contained"
+              onPress={handleCreate}
+              disabled={!isFormValid || isLoading}
+              loading={isLoading}
+              style={styles.createButton}
+              contentStyle={{ paddingVertical: 4 }}
+            >
+              Create Agent
+            </Button>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

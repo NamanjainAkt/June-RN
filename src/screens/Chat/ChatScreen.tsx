@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, FlatList, Keyboard, LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatInput } from '../../components';
 import { VercelMessageBubble, VercelTypingIndicator } from '../../components/vercel/VercelChatComponents';
 import { getVercelColors, VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
@@ -36,30 +37,7 @@ export function ChatScreen() {
   const [selectedImages, setSelectedImages] = useState<Array<{ uri: string; base64: string }>>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [messageStatuses, setMessageStatuses] = useState<Record<string, 'sending' | 'sent' | 'error'>>({});
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-
-  useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
-  }, []);
 
   const colors = getVercelColors(isDarkMode);
   const agentId = route.params?.agentId;
@@ -117,56 +95,37 @@ export function ChatScreen() {
   }, [agentId, sessionId, agents]);
 
   // Handle header configuration
-  useEffect(() => {
-    if (agent) {
-      navigation.setOptions({
-        headerTitle: agent.name,
-        headerRight: () => (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              onPress={() => {
-                const sid = currentSession?.id;
-                const uid = user?.id;
-                if (!sid || !uid) return;
+  // Handle Delete Session
+  const handleDeleteSession = async () => {
+    const sid = currentSession?.id;
+    const uid = user?.id;
+    if (!sid || !uid) return;
 
-                Alert.alert(
-                  'Delete Chat',
-                  'Are you sure you want to delete this conversation?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Delete',
-                      style: 'destructive',
-                      onPress: async () => {
-                        await deleteSession(sid, uid);
-                        navigation.navigate('Main', { screen: 'History' });
-                      }
-                    }
-                  ]
-                );
-              }}
-              style={styles.headerIconButton}
-            >
-              <MaterialCommunityIcons name="delete-outline" size={24} color={colors.error} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                const newAgent = agents.find((a) => a.id === agentId);
-                if (newAgent) {
-                  createSession(newAgent);
-                  setMessage('');
-                  setSelectedImages([]);
-                }
-              }}
-              style={styles.headerIconButton}
-            >
-              <MaterialCommunityIcons name="plus" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        ),
-      });
+    Alert.alert(
+      'Delete Chat',
+      'Are you sure you want to delete this conversation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteSession(sid, uid);
+            navigation.navigate('Main', { screen: 'History' });
+          }
+        }
+      ]
+    );
+  };
+
+  const handleNewChat = () => {
+    const newAgent = agents.find((a) => a.id === agentId);
+    if (newAgent) {
+      createSession(newAgent);
+      setMessage('');
+      setSelectedImages([]);
     }
-  }, [agent, colors, currentSession?.id, user?.id, navigation, agents, agentId, createSession, deleteSession]);
+  };
 
   const handleSend = useCallback(async () => {
     if (!message.trim() && selectedImages.length === 0) return;
@@ -281,91 +240,144 @@ export function ChatScreen() {
   }, [messages.length, messages]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {messages.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceActive }]}>
-            <Text style={{ color: colors.textPrimary, fontSize: isXl ? 64 : isLg ? 56 : isMd ? 52 : 48 }}>
-              {agent?.name?.charAt(0) || 'A'}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
+      {/* Custom Header */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: VERCEL_SPACING.md,
+        paddingVertical: VERCEL_SPACING.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        backgroundColor: colors.background,
+      }}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ padding: VERCEL_SPACING.xs, marginRight: VERCEL_SPACING.sm }}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+
+        <View style={{ flex: 1 }}>
+          <Text style={{
+            fontSize: VERCEL_TYPOGRAPHY.sizes.lg,
+            fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
+            color: colors.textPrimary,
+          }}>
+            {agent?.name || 'Chat'}
+          </Text>
+          {agent?.description && (
+            <Text style={{
+              fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
+              fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
+              color: colors.textSecondary,
+            }} numberOfLines={1}>
+              {agent.description}
+            </Text>
+          )}
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={handleDeleteSession}
+            style={{ padding: VERCEL_SPACING.xs, marginRight: VERCEL_SPACING.xs }}
+          >
+            <MaterialCommunityIcons name="delete-outline" size={24} color={colors.error} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleNewChat}
+            style={{ padding: VERCEL_SPACING.xs }}
+          >
+            <MaterialCommunityIcons name="plus" size={24} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <View style={[styles.emptyIcon, { backgroundColor: colors.surfaceActive }]}>
+              <Text style={{ color: colors.textPrimary, fontSize: isXl ? 64 : isLg ? 56 : isMd ? 52 : 48 }}>
+                {agent?.name?.charAt(0) || 'A'}
+              </Text>
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontSize: isXl ? VERCEL_TYPOGRAPHY.sizes['3xl'] : isLg ? VERCEL_TYPOGRAPHY.sizes['2xl'] : VERCEL_TYPOGRAPHY.sizes.xl }]}>
+              Chat with {agent?.name}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontSize: isSm ? VERCEL_TYPOGRAPHY.sizes.sm : VERCEL_TYPOGRAPHY.sizes.base }]}>
+              {agent?.description}
             </Text>
           </View>
-          <Text style={[styles.emptyTitle, { color: colors.textPrimary, fontSize: isXl ? VERCEL_TYPOGRAPHY.sizes['3xl'] : isLg ? VERCEL_TYPOGRAPHY.sizes['2xl'] : VERCEL_TYPOGRAPHY.sizes.xl }]}>
-            Chat with {agent?.name}
-          </Text>
-          <Text style={[styles.emptySubtitle, { color: colors.textSecondary, fontSize: isSm ? VERCEL_TYPOGRAPHY.sizes.sm : VERCEL_TYPOGRAPHY.sizes.base }]}>
-            {agent?.description}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={({ item }) => (
-            <VercelMessageBubble
-              message={item}
-              isDarkMode={isDarkMode}
-              agentName={agent?.name}
-              isUser={item.role === 'user'}
-              sendStatus={item.role === 'user' ? messageStatuses[item.id] : undefined}
-              onRetry={item.role === 'user' && messageStatuses[item.id] === 'error' ? handleRetryMessage : undefined}
-              onDelete={item.role === 'user' ? handleDeleteMessage : undefined}
-              containerWidth={getContainerWidth()}
-              breakpoint={{ isSm, isMd, isLg, isXl }}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.messagesList, {
-            padding: getMessagesPadding(),
-            paddingBottom: isSm ? VERCEL_SPACING.xs : VERCEL_SPACING.sm,
-            maxWidth: isXl ? VERCEL_LAYOUT.breakpoints.xl : isLg ? VERCEL_LAYOUT.breakpoints.lg : '100%',
-          }]}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: true })
-          }
-          ListFooterComponent={
-            isTyping ? (
-              <VercelTypingIndicator
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={({ item }) => (
+              <VercelMessageBubble
+                message={item}
                 isDarkMode={isDarkMode}
                 agentName={agent?.name}
+                isUser={item.role === 'user'}
+                sendStatus={item.role === 'user' ? messageStatuses[item.id] : undefined}
+                onRetry={item.role === 'user' && messageStatuses[item.id] === 'error' ? handleRetryMessage : undefined}
+                onDelete={item.role === 'user' ? handleDeleteMessage : undefined}
+                containerWidth={getContainerWidth()}
                 breakpoint={{ isSm, isMd, isLg, isXl }}
               />
-            ) : null
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[styles.messagesList, {
+              padding: getMessagesPadding(),
+              paddingBottom: isSm ? VERCEL_SPACING.xs : VERCEL_SPACING.sm,
+              maxWidth: isXl ? VERCEL_LAYOUT.breakpoints.xl : isLg ? VERCEL_LAYOUT.breakpoints.lg : '100%',
+            }]}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            ListFooterComponent={
+              isTyping ? (
+                <VercelTypingIndicator
+                  isDarkMode={isDarkMode}
+                  agentName={agent?.name}
+                  breakpoint={{ isSm, isMd, isLg, isXl }}
+                />
+              ) : null
+            }
+          />
+        )}
+
+        {(isLoading || isTyping) && (
+          <View style={styles.loadingIndicator}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              {isTyping ? 'Thinking...' : 'Loading...'}
+            </Text>
+          </View>
+        )}
+
+
+        <View style={[
+          styles.inputContainer,
+          {
+            borderTopColor: colors.border,
           }
-        />
-      )}
-
-      {(isLoading || isTyping) && (
-        <View style={styles.loadingIndicator}>
-          <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            {isTyping ? 'Thinking...' : 'Loading...'}
-          </Text>
+        ]}>
+          <ChatInput
+            value={message}
+            onChangeText={setMessage}
+            onSend={handleSend}
+            onImagesSelected={handleImagesSelected}
+            selectedImages={selectedImages}
+            isLoading={isLoading}
+          />
         </View>
-      )}
-
-
-      <View style={[
-        styles.inputContainer,
-        {
-          borderTopColor: colors.border,
-          paddingBottom: Platform.OS === 'ios' ? keyboardHeight : 0, // iOS handles its own avoidance usually, or we do manual
-          // For Android, we might need a different approach if windowSoftInputMode is 'adjustResize'
-          // But user asked for dynamic calculation. Let's apply it to a valid container.
-          marginBottom: Platform.OS === 'android' ? 0 : 0
-        }
-      ]}>
-        <ChatInput
-          value={message}
-          onChangeText={setMessage}
-          onSend={handleSend}
-          onImagesSelected={handleImagesSelected}
-          selectedImages={selectedImages}
-          isLoading={isLoading}
-        />
-        {Platform.OS === 'android' && <View style={{ height: keyboardHeight }} />}
-      </View>
-    </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

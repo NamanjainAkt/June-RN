@@ -1,30 +1,12 @@
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai';
+// AI Service using OpenRouter for text and Pollinations.ai for images
 
-const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
-console.log('🔑 Gemini API Key:', GEMINI_KEY.substring(0, 8) + '...');
-const genAI = new GoogleGenerativeAI(GEMINI_KEY);
+const OPENROUTER_API_KEY = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY || '';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const SAFETY_SETTINGS = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
+// Using a fast, efficient model for chat
+const TEXT_MODEL = 'meta-llama/llama-3.3-70b-instruct:free';
 
-const IMAGE_MODEL_NAME = 'gemini-2.5-flash-image';
-const TEXT_MODEL_NAME = 'gemini-2.0-flash-lite';
+console.log('🔑 OpenRouter API Key:', OPENROUTER_API_KEY.substring(0, 8) + '...');
 
 export async function generateResponse(
   prompt: string,
@@ -33,122 +15,90 @@ export async function generateResponse(
   isImageGeneration?: boolean
 ): Promise<{ text: string; imageUrl?: string }> {
   try {
-    const modelName = isImageGeneration ? IMAGE_MODEL_NAME : TEXT_MODEL_NAME;
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      safetySettings: SAFETY_SETTINGS,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-      },
-    });
+    // Handle image generation with Pollinations.ai
+    if (isImageGeneration) {
+      const seed = Math.floor(Math.random() * 1000000);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
 
-    const generationConfig = {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 2048,
-    };
+      return {
+        text: `I've generated this image for you. \n\n**Prompt:** "${prompt}"`,
+        imageUrl
+      };
+    }
 
-    const contents: any[] = [];
+    // Build messages array for OpenRouter
+    const messages: any[] = [];
 
     if (systemPrompt) {
-      contents.push({
+      messages.push({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
+
+    // Handle image input if provided
+    if (imageBase64) {
+      messages.push({
         role: 'user',
-        parts: [
-          { text: `System: ${systemPrompt}\n\nUser: ${prompt}` },
-        ],
+        content: [
+          { type: 'text', text: prompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${imageBase64}`
+            }
+          }
+        ]
       });
     } else {
-      contents.push({
+      messages.push({
         role: 'user',
-        parts: [{ text: prompt }],
+        content: prompt
       });
     }
 
-    if (imageBase64) {
-      contents.push({
-        role: 'user',
-        parts: [
-          { text: prompt },
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: imageBase64,
-            },
-          },
-        ],
-      });
-    }
-
-    if (isImageGeneration) {
-      try {
-        console.log('🖼️ Attempting Gemini image generation...');
-        const result = await model.generateContent({
-          contents,
-          generationConfig,
-        });
-
-        const response = result.response;
-        const text = response.text();
-
-        console.log('🖼️ Gemini response received, checking for image data...');
-
-        const imagePart = response.candidates?.[0]?.content?.parts?.find(
-          (part: any) => part.inlineData?.mimeType?.startsWith('image/')
-        );
-
-        if (imagePart?.inlineData) {
-          const imageBase64 = imagePart.inlineData.data;
-          const mimeType = imagePart.inlineData.mimeType || 'image/png';
-          return {
-            text: `I've generated this image using Gemini. \n\n**Prompt:** "${text}"`,
-            imageUrl: `data:${mimeType};base64,${imageBase64}`
-          };
-        }
-
-        throw new Error('No image data in Gemini response');
-      } catch (err: any) {
-        console.warn('⚠️ Gemini Image failed, falling back to Pollinations:', err.message);
-
-        // Fallback to Pollinations.ai
-        const seed = Math.floor(Math.random() * 1000000);
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
-
-        return {
-          text: `Gemini is currently at its limit, so I've used our high-speed backup engine to create this for you. \n\n**Prompt:** "${prompt}"`,
-          imageUrl
-        };
-      }
-    }
-
-    const result = await model.generateContent({
-      contents,
-      generationConfig,
+    // Make request to OpenRouter
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://june-ai.expo.app',
+        'X-Title': 'June AI'
+      },
+      body: JSON.stringify({
+        model: TEXT_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+      })
     });
 
-    const response = result.response;
-    const text = response.text();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({})) as any;
+      throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json() as any;
+    const text = data.choices?.[0]?.message?.content || '';
+
+    if (!text) {
+      throw new Error('No response generated from the model');
+    }
 
     return { text };
   } catch (error: any) {
-    console.error('Gemini API Error:', error);
-
-    if (error.message?.includes('Empty response')) {
-      throw new Error('The model did not generate a response. Please try again.');
-    }
-
-    if (error.message?.includes('SAFETY')) {
-      throw new Error('This request was blocked due to safety guidelines.');
-    }
+    console.error('AI API Error:', error);
 
     if (error.message?.includes('rate limit')) {
       throw new Error('Rate limit exceeded. Please wait a moment and try again.');
     }
 
-    throw new Error(`API Error: ${error.message || 'Unknown error occurred'}`);
+    if (error.message?.includes('API key')) {
+      throw new Error('Invalid API key. Please check your configuration.');
+    }
+
+    throw new Error(`AI Error: ${error.message || 'Unknown error occurred'}`);
   }
 }
 
@@ -159,68 +109,106 @@ export async function* generateStreamingResponse(
   isImageGeneration?: boolean
 ): AsyncGenerator<string> {
   try {
-    const model = genAI.getGenerativeModel({
-      model: isImageGeneration ? IMAGE_MODEL_NAME : TEXT_MODEL_NAME,
-      safetySettings: SAFETY_SETTINGS,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-      },
-    });
+    // Image generation doesn't support streaming
+    if (isImageGeneration) {
+      const result = await generateResponse(prompt, systemPrompt, imageBase64, true);
+      yield result.text;
+      return;
+    }
 
-    const generationConfig = {
-      temperature: 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 2048,
-    };
-
-    const contents: any[] = [];
+    // Build messages array
+    const messages: any[] = [];
 
     if (systemPrompt) {
-      contents.push({
-        role: 'user',
-        parts: [
-          { text: `System: ${systemPrompt}\n\nUser: ${prompt}` },
-        ],
-      });
-    } else {
-      contents.push({
-        role: 'user',
-        parts: [{ text: prompt }],
+      messages.push({
+        role: 'system',
+        content: systemPrompt
       });
     }
 
     if (imageBase64) {
-      contents.push({
+      messages.push({
         role: 'user',
-        parts: [
-          { text: prompt },
+        content: [
+          { type: 'text', text: prompt },
           {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: imageBase64,
-            },
-          },
-        ],
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${imageBase64}`
+            }
+          }
+        ]
+      });
+    } else {
+      messages.push({
+        role: 'user',
+        content: prompt
       });
     }
 
-    const result = await model.generateContentStream({
-      contents,
-      generationConfig,
+    // Make streaming request to OpenRouter
+    const response = await fetch(OPENROUTER_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://june-ai.expo.app',
+        'X-Title': 'June AI'
+      },
+      body: JSON.stringify({
+        model: TEXT_MODEL,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+        stream: true
+      })
     });
 
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      if (chunkText) {
-        yield chunkText;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({})) as any;
+      throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+    }
+
+    // Read the stream
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Failed to get response stream');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
+
+        if (trimmedLine.startsWith('data: ')) {
+          try {
+            const jsonStr = trimmedLine.slice(6);
+            const data = JSON.parse(jsonStr);
+            const content = data.choices?.[0]?.delta?.content;
+
+            if (content) {
+              yield content;
+            }
+          } catch (e) {
+            // Skip invalid JSON
+            continue;
+          }
+        }
       }
     }
   } catch (error: any) {
-    console.error('Gemini Streaming Error:', error);
+    console.error('Streaming Error:', error);
     throw error;
   }
 }

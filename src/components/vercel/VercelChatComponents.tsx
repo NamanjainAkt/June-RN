@@ -133,9 +133,9 @@ export const VercelMessageBubble: React.FC<VercelMessageBubbleProps> = ({
           encoding: EncodingType.Base64,
         });
       } else {
-        // Handle regular URL
-        const extension = imageUrl.split('.').pop()?.split('?')[0] || 'jpg';
-        const filename = `june_image_${Date.now()}.${extension}`;
+        // Handle regular URL (including Pollinations.ai)
+        // Use a simple filename to avoid issues with long URLs
+        const filename = `june_image_${Date.now()}.png`;
         fileUri = `${cacheDirectory}${filename}`;
 
         await downloadAsync(imageUrl, fileUri);

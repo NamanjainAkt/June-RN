@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Markdown from 'react-native-easy-markdown';
+import Markdown from 'react-native-markdown-display';
 import { useAppTheme, useDynamicFontSize } from '../hooks';
 
 interface MarkdownViewProps {
@@ -19,32 +19,32 @@ export function MarkdownView({ content }: MarkdownViewProps) {
   return (
     <View style={styles.container}>
       <Markdown
-        markdownStyles={{
-          h1: {
+        style={{
+          heading1: {
             color: colors.textPrimary,
             fontSize: baseFontSize * 1.5,
             fontWeight: 'bold',
           },
-          h2: {
+          heading2: {
             color: colors.textPrimary,
             fontSize: baseFontSize * 1.25,
             fontWeight: 'bold',
           },
-          h3: {
+          heading3: {
             color: colors.textPrimary,
             fontSize: baseFontSize * 1.125,
             fontWeight: '600',
           },
-          h4: {
+          heading4: {
             color: colors.textPrimary,
             fontSize: baseFontSize,
             fontWeight: '600',
           },
-          text: {
+          body: {
             color: colors.textPrimary,
             fontSize: baseFontSize,
           },
-          blockQuote: {
+          blockquote: {
             backgroundColor: colors.surface,
             borderLeftColor: colors.accent,
             borderLeftWidth: 4,
@@ -54,7 +54,7 @@ export function MarkdownView({ content }: MarkdownViewProps) {
             color: colors.accent,
             textDecorationLine: 'underline',
           },
-          listItem: {
+          list_item: {
             color: colors.textPrimary,
             fontSize: baseFontSize,
           },

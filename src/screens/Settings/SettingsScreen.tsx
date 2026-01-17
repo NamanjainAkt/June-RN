@@ -7,6 +7,7 @@ import {
   Divider,
   Switch
 } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { VercelAvatar, VercelButton, VercelCard } from '../../components/vercel/VercelComponents';
 import { VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { useAppTheme, useFontSize } from '../../hooks';
@@ -81,9 +82,27 @@ export function SettingsScreen() {
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
 
-  // Responsive configuration
+  // Responsive configuration using all breakpoints
   const screenWidth = Dimensions.get('window').width;
-  const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md;
+  const isSm = screenWidth < VERCEL_LAYOUT.breakpoints.md; // < 414
+  const isMd = screenWidth >= VERCEL_LAYOUT.breakpoints.md && screenWidth < VERCEL_LAYOUT.breakpoints.lg; // 414-767
+  const isLg = screenWidth >= VERCEL_LAYOUT.breakpoints.lg && screenWidth < VERCEL_LAYOUT.breakpoints.xl; // 768-1023
+  const isXl = screenWidth >= VERCEL_LAYOUT.breakpoints.xl; // >= 1024
+
+  // Dynamic spacing based on breakpoint
+  const getContentPadding = () => {
+    if (isSm) return VERCEL_SPACING.lg;
+    if (isMd) return VERCEL_SPACING.xl;
+    if (isLg) return VERCEL_SPACING['2xl'];
+    return VERCEL_SPACING['3xl'];
+  };
+
+  // Dynamic avatar size
+  const getAvatarSize = (): 'sm' | 'md' | 'lg' | 'xl' => {
+    if (isXl) return 'xl';
+    if (isLg) return 'lg';
+    return 'lg';
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -115,10 +134,13 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { padding: getContentPadding(), paddingBottom: getContentPadding() * 1.5 }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Section */}
@@ -126,7 +148,7 @@ export function SettingsScreen() {
           <View style={styles.profileInfo}>
             <VercelAvatar
               name={user?.name || 'Guest'}
-              size="lg"
+              size={getAvatarSize()}
               isDarkMode={themeSettings.mode === 'dark'}
             />
             <View style={styles.profileText}>
@@ -144,7 +166,7 @@ export function SettingsScreen() {
         </VercelCard>
 
         {/* Appearance Section */}
-        <Text style={styles.sectionHeader}>Appearance</Text>
+        <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>Appearance</Text>
         <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
           <SettingItem
             icon="brightness-4"
@@ -177,7 +199,7 @@ export function SettingsScreen() {
         </VercelCard>
 
         {/* AI Preferences Section */}
-        <Text style={styles.sectionHeader}>AI Preferences</Text>
+        <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>AI Preferences</Text>
         <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
           <SettingItem
             icon="history"
@@ -188,18 +210,11 @@ export function SettingsScreen() {
             isDarkMode={themeSettings.mode === 'dark'}
             color="#f59e0b"
           />
-          <Divider style={{ backgroundColor: colors.border }} />
-          <SettingItem
-            icon="microphone"
-            label="Voice Agent"
-            onPress={() => navigation.navigate('Voice')}
-            isDarkMode={themeSettings.mode === 'dark'}
-            color="#ec4899"
-          />
+
         </VercelCard>
 
         {/* General Section */}
-        <Text style={styles.sectionHeader}>General</Text>
+        <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>General</Text>
         <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
           <SettingItem
             icon="vibrate"
@@ -240,7 +255,7 @@ export function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -252,13 +267,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: VERCEL_SPACING.lg,
-    paddingBottom: VERCEL_SPACING['2xl'],
+    // Padding is now dynamic via inline styles
   },
   profileCard: {
-    padding: VERCEL_SPACING.lg,
-    borderRadius: VERCEL_BORDER_RADIUS.lg,
-    marginBottom: VERCEL_SPACING.xl,
+    padding: VERCEL_SPACING.xl,
+    borderRadius: VERCEL_BORDER_RADIUS.xl,
+    marginBottom: VERCEL_SPACING['2xl'],
   },
   profileInfo: {
     flexDirection: 'row',
@@ -292,15 +306,16 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: VERCEL_TYPOGRAPHY.sizes.xs,
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.bold,
-    color: '#a1a1aa',
+    // Color is now dynamic via inline styles
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: VERCEL_SPACING.sm,
+    letterSpacing: 1.2,
+    marginBottom: VERCEL_SPACING.md,
+    marginTop: VERCEL_SPACING.sm,
     marginLeft: 4,
   },
   settingCard: {
-    borderRadius: VERCEL_BORDER_RADIUS.lg,
-    marginBottom: VERCEL_SPACING.xl,
+    borderRadius: VERCEL_BORDER_RADIUS.xl,
+    marginBottom: VERCEL_SPACING['2xl'],
     overflow: 'hidden',
   },
   settingRow: {
@@ -335,7 +350,8 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.regular,
   },
   logoutContainer: {
-    marginTop: VERCEL_SPACING.sm,
+    marginTop: VERCEL_SPACING.md,
+    marginBottom: VERCEL_SPACING.lg,
   },
   footer: {
     marginTop: VERCEL_SPACING['2xl'],

@@ -203,6 +203,7 @@ function RootNavigation() {
           headerShown: false,
           animation: 'slide_from_right',
           gestureEnabled: true,
+          presentation: 'card',
         }}
       >
         {clerkSignedIn ? (
@@ -216,25 +217,14 @@ function RootNavigation() {
               name="Chat"
               component={ChatScreen}
               options={{
-                headerShown: true,
-                headerTitleAlign: 'center',
-                headerStyle: {
-                  backgroundColor: colors.background,
-                },
-                headerTintColor: colors.textPrimary,
+                headerShown: false,
               }}
             />
             <Stack.Screen
               name="CreateAgent"
               component={CreateAgentScreen}
               options={{
-                headerShown: true,
-                headerTitleAlign: 'center',
-                headerTitle: 'Create Custom Agent',
-                headerStyle: {
-                  backgroundColor: colors.background,
-                },
-                headerTintColor: colors.textPrimary,
+                headerShown: false,
               }}
             />
 

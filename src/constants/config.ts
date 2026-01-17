@@ -1,7 +1,7 @@
 export const APP_CONFIG = {
   NAME: 'June AI',
   VERSION: '1.0.0',
-  MODEL: 'Gemini 2.5 Flash',
+  MODEL: 'Llama 3.3 70B',
   API_TIMEOUT: 30000,
   MAX_MESSAGE_LENGTH: 2000,
   MAX_AGENTS_DISPLAY: 50,
