@@ -6,6 +6,7 @@ import { NavigationIndependentTree } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect } from 'react';
@@ -27,6 +28,9 @@ import { useChatStore } from './src/store/useChatStore';
 
 // Browser warming for Clerk OAuth
 WebBrowser.maybeCompleteAuthSession();
+
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
 
 export const useWarmUpBrowser = () => {
   useEffect(() => {
@@ -353,6 +357,12 @@ export default function App() {
     fonts,
     roundness: VERCEL_BORDER_RADIUS.sm,
   };
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
 
   if (!fontsLoaded) {
     return <LoadingScreen />;
