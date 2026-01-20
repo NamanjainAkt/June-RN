@@ -1,6 +1,7 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useAppTheme, useDynamicFontSize } from '../hooks';
 
@@ -58,6 +59,78 @@ export function MarkdownView({ content }: MarkdownViewProps) {
             color: colors.textPrimary,
             fontSize: baseFontSize,
           },
+          code_inline: {
+            backgroundColor: colors.surfaceActive,
+            color: colors.accent,
+            paddingHorizontal: 4,
+            borderRadius: 4,
+            fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+          },
+          code_block: {
+            backgroundColor: colors.surfaceActive,
+            color: colors.textPrimary,
+            padding: 12,
+            borderRadius: 8,
+            fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+            fontSize: baseFontSize * 0.9,
+            marginVertical: 8,
+          },
+          fence: {
+            backgroundColor: colors.surfaceActive,
+            color: colors.textPrimary,
+            padding: 12,
+            borderRadius: 8,
+            fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+            fontSize: baseFontSize * 0.9,
+            marginVertical: 8,
+          },
+        }}
+        rules={{
+          fence: (node, children, parent, styles) => {
+            const content = node.content;
+            const language = (node as any).info || 'code';
+
+            const handleCopy = async () => {
+              await Clipboard.setStringAsync(content);
+            };
+
+            return (
+              <View key={node.key} style={[styles.fence, { padding: 0, overflow: 'hidden' }]}>
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  backgroundColor: colors.border,
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.surface,
+                }}>
+                  <Text style={{
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                    textTransform: 'lowercase'
+                  }}>
+                    {language}
+                  </Text>
+                  <TouchableOpacity onPress={handleCopy} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="content-copy" size={14} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontSize: 12, marginLeft: 4 }}>Copy</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{ padding: 12 }}>
+                  <Text style={{
+                    color: colors.textPrimary,
+                    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                    fontSize: baseFontSize * 0.9,
+                  }}>
+                    {content}
+                  </Text>
+                </View>
+              </View>
+            );
+          }
         }}
       >
         {content}

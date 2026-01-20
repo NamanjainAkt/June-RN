@@ -74,8 +74,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { signOut } = useAuth();
   const { user, logout } = useAuthStore();
-  const { theme: themeSettings, setTheme } = useThemeStore();
-  const { colors, typography } = useAppTheme();
+  const { colors, typography, isDarkMode } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   // Mock states for additional settings
@@ -129,7 +128,7 @@ export function SettingsScreen() {
 
   const toggleTheme = () => {
     setTheme({
-      mode: themeSettings.mode === 'dark' ? 'light' : 'dark',
+      mode: isDarkMode ? 'light' : 'dark',
     });
   };
 
@@ -144,12 +143,12 @@ export function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Section */}
-        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.profileCard} variant='elevated'>
+        <VercelCard isDarkMode={isDarkMode} style={styles.profileCard} variant='elevated'>
           <View style={styles.profileInfo}>
             <VercelAvatar
               name={user?.name || 'Guest'}
               size={getAvatarSize()}
-              isDarkMode={themeSettings.mode === 'dark'}
+              isDarkMode={isDarkMode}
             />
             <View style={styles.profileText}>
               <Text style={[styles.profileName, { color: colors.textPrimary }]}>
@@ -167,14 +166,14 @@ export function SettingsScreen() {
 
         {/* Appearance Section */}
         <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>Appearance</Text>
-        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
+        <VercelCard isDarkMode={isDarkMode} style={styles.settingCard}>
           <SettingItem
             icon="brightness-4"
             label="Dark Mode"
             showSwitch
-            switchValue={themeSettings.mode === 'dark'}
+            switchValue={isDarkMode}
             onSwitchChange={toggleTheme}
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             color="#9333ea"
           />
           <Divider style={{ backgroundColor: colors.border }} />
@@ -193,21 +192,21 @@ export function SettingsScreen() {
                 ]
               );
             }}
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             color="#3b82f6"
           />
         </VercelCard>
 
         {/* AI Preferences Section */}
         <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>AI Preferences</Text>
-        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
+        <VercelCard isDarkMode={isDarkMode} style={styles.settingCard}>
           <SettingItem
             icon="history"
             label="Auto-save History"
             showSwitch
             switchValue={autoSave}
             onSwitchChange={setAutoSave}
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             color="#f59e0b"
           />
 
@@ -215,14 +214,14 @@ export function SettingsScreen() {
 
         {/* General Section */}
         <Text style={[styles.sectionHeader, { color: colors.textTertiary }]}>General</Text>
-        <VercelCard isDarkMode={themeSettings.mode === 'dark'} style={styles.settingCard}>
+        <VercelCard isDarkMode={isDarkMode} style={styles.settingCard}>
           <SettingItem
             icon="vibrate"
             label="Haptic Feedback"
             showSwitch
             switchValue={hapticsEnabled}
             onSwitchChange={setHapticsEnabled}
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             color="#ec4899"
           />
           <Divider style={{ backgroundColor: colors.border }} />
@@ -230,7 +229,7 @@ export function SettingsScreen() {
             icon="database-outline"
             label="Clear Cache"
             onPress={() => Alert.alert('Clear Cache', 'Cache cleared successfully!')}
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             color="#ef4444"
           />
         </VercelCard>
@@ -243,7 +242,7 @@ export function SettingsScreen() {
             size="lg"
             onPress={handleLogout}
             text="Log Out"
-            isDarkMode={themeSettings.mode === 'dark'}
+            isDarkMode={isDarkMode}
             fullWidth
           />
         </View>
