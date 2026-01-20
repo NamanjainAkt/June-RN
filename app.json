@@ -8,6 +8,7 @@
     "scheme": "june",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "jsEngine": "jsc",
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -29,7 +30,10 @@
       },
       "permissions": [
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "WRITE_MEDIA_IMAGES",
+        "INTERNET"
       ],
       "intentFilters": [
         {
