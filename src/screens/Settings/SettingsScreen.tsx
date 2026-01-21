@@ -362,3 +362,7 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
 });
+function setTheme(arg0: { mode: string; }) {
+  throw new Error('Function not implemented.');
+}
+
