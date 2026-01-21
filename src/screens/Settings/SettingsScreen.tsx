@@ -12,7 +12,6 @@ import { VercelAvatar, VercelButton, VercelCard } from '../../components/vercel/
 import { VERCEL_BORDER_RADIUS, VERCEL_LAYOUT, VERCEL_SPACING, VERCEL_TYPOGRAPHY } from '../../constants/vercel-theme';
 import { useAppTheme, useFontSize } from '../../hooks';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useThemeStore } from '../../store/useThemeStore';
 
 interface SettingItemProps {
   icon: string;
@@ -74,7 +73,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<any>();
   const { signOut } = useAuth();
   const { user, logout } = useAuthStore();
-  const { colors, typography, isDarkMode } = useAppTheme();
+  const { colors, typography, isDarkMode, setTheme, toggleTheme } = useAppTheme();
   const { fontSize, increaseFontSize, decreaseFontSize } = useFontSize();
 
   // Mock states for additional settings
@@ -126,10 +125,8 @@ export function SettingsScreen() {
     );
   };
 
-  const toggleTheme = () => {
-    setTheme({
-      mode: isDarkMode ? 'light' : 'dark',
-    });
+  const handleToggleTheme = () => {
+    toggleTheme();
   };
 
   return (
@@ -172,7 +169,7 @@ export function SettingsScreen() {
             label="Dark Mode"
             showSwitch
             switchValue={isDarkMode}
-            onSwitchChange={toggleTheme}
+            onSwitchChange={handleToggleTheme}
             isDarkMode={isDarkMode}
             color="#9333ea"
           />
@@ -362,7 +359,5 @@ const styles = StyleSheet.create({
     fontFamily: VERCEL_TYPOGRAPHY.fontFamily.medium,
   },
 });
-function setTheme(arg0: { mode: string; }) {
-  throw new Error('Function not implemented.');
-}
+
 
